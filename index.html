@@ -8,7 +8,7 @@
     html, body {
       margin: 0;
       padding: 0;
-      background-color: #00008B; /* dark blue background */
+      background-color: #00008B; /* dark blue */
       overflow: hidden;
       height: 100%;
     }
@@ -24,7 +24,9 @@
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    // Set canvas size to window size
+    // Declare center and radius variables
+    let centerX, centerY, circleRadius;
+    // Function to set canvas size and update circle metrics
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -35,35 +37,22 @@
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
-    // Center of the circle and circle radius
-    let centerX = canvas.width / 2;
-    let centerY = canvas.height / 2;
-    let circleRadius = Math.min(canvas.width, canvas.height) / 3;
-
     // Allowed angle ranges (in degrees)
-    // Left slider: allowed between 135 (max freq) and 225 (min freq)
-    // Right slider: allowed between 315 (min freq) and 405 (max freq) 
-    // (We use values above 360 for ease; when drawing, we convert to modulo 360)
     let leftMinAngle = 135, leftMaxAngle = 225;
     let rightMinAngle = 315, rightMaxAngle = 405;
 
-    // Initial frequencies: mapping frequencies between 400 and 480 Hz.
-    // For left slider, frequency = 400 + ((leftMaxAngle - angle)/90)*80.
-    // For right slider, frequency = 400 + (((angle - rightMinAngle)/90))*80.
+    // Initial frequencies mapping (400-480 Hz)
+    // Defaults: left frequency 440 Hz, right frequency 445 Hz.
     let leftFrequency, rightFrequency;
-    // Default: left frequency = 440 Hz, right frequency = 445 Hz.
-    // Compute initial angles based on inverse mapping:
-    // For left: angle = leftMaxAngle - ((freq - 400)/80)*90. For 440, that is:
-    let leftAngle = leftMaxAngle - ((440 - 400) / 80) * 90; // 225 - (40/80*90)=225 -45=180
-    let rightAngle = rightMinAngle + ((445 - 400) / 80) * 90; // 315 + (45/80*90)=315+50.625=365.625
+    let leftAngle = leftMaxAngle - ((440 - 400) / 80) * 90; // 180°
+    let rightAngle = rightMinAngle + ((445 - 400) / 80) * 90; // ≈365.625°
 
     function updateFrequencies() {
-      // For left slider: frequency increases as angle decreases.
+      // Left frequency increases as angle decreases.
       leftFrequency = 400 + ((leftMaxAngle - leftAngle) / 90) * 80;
-      // For right slider: frequency increases as angle increases.
+      // Right frequency increases as angle increases.
       rightFrequency = 400 + ((rightAngle - rightMinAngle) / 90) * 80;
-      // Update audio oscillators if started
-      if(audioStarted){
+      if(audioStarted) {
         osc1.frequency.setValueAtTime(leftFrequency, audioCtx.currentTime);
         osc2.frequency.setValueAtTime(rightFrequency, audioCtx.currentTime);
       }
@@ -76,21 +65,20 @@
     let osc2 = audioCtx.createOscillator();
     osc1.type = 'sine';
     osc2.type = 'sine';
-    // Connect to destination
     osc1.connect(audioCtx.destination);
     osc2.connect(audioCtx.destination);
-    let audioStarted = false;  // Will start on first interaction
+    let audioStarted = false;
 
-    // Variables for dragging
+    // Dragging variables
     let dragging = false;
     let dragHandle = null; // "left" or "right"
 
-    // Convert degrees to radians
+    // Utility: convert degrees to radians
     function toRadians(deg) {
       return deg * Math.PI / 180;
     }
 
-    // Given an angle (in degrees) on circle, return cartesian coordinates
+    // Return Cartesian coordinates on the circle for given angle
     function pointOnCircle(angleDeg) {
       const angleRad = toRadians(angleDeg);
       const x = centerX + circleRadius * Math.cos(angleRad);
@@ -98,30 +86,26 @@
       return { x, y };
     }
 
-    // Determine if a point (mx, my) is near a handle (within threshold)
+    // Check if point (mx, my) is near a given handle position
     function isNearHandle(mx, my, handlePos) {
       const dx = mx - handlePos.x;
       const dy = my - handlePos.y;
       return Math.sqrt(dx * dx + dy * dy) < 15;
     }
 
-    // Mouse event handlers
+    // Mouse events on the canvas
     canvas.addEventListener("mousedown", (e) => {
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
 
-      // Start audio on first interaction if not started
-      if(!audioStarted){
-          // Start oscillators
-          osc1.start();
-          osc2.start();
-          audioStarted = true;
+      if (!audioStarted) {
+        osc1.start();
+        osc2.start();
+        audioStarted = true;
       }
 
-      // Get positions of left and right handles
       const leftPos = pointOnCircle(leftAngle);
-      // For right handle, use normal angle = rightAngle mod 360 for drawing.
       const rightDisplayAngle = rightAngle >= 360 ? rightAngle - 360 : rightAngle;
       const rightPos = pointOnCircle(rightDisplayAngle);
 
@@ -135,24 +119,19 @@
     });
 
     canvas.addEventListener("mousemove", (e) => {
-      if(!dragging) return;
+      if (!dragging) return;
 
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
-      // Calculate angle from center to mouse (in degrees)
       let angle = Math.atan2(my - centerY, mx - centerX) * 180 / Math.PI;
       if(angle < 0) angle += 360;
 
       if(dragHandle === "left") {
-        // Constrain angle between leftMinAngle and leftMaxAngle.
-        // Since allowed range is [135,225], if angle falls outside, clamp it.
         if(angle < leftMinAngle) angle = leftMinAngle;
         if(angle > leftMaxAngle) angle = leftMaxAngle;
         leftAngle = angle;
       } else if(dragHandle === "right") {
-        // For right slider, our allowed effective angle is between 315 and 405.
-        // If the computed angle is less than 315, add 360.
         let effectiveAngle = angle;
         if(effectiveAngle < rightMinAngle) effectiveAngle += 360;
         if(effectiveAngle < rightMinAngle) effectiveAngle = rightMinAngle;
@@ -171,18 +150,20 @@
       dragHandle = null;
     });
 
+    // Draw everything on the canvas
     function draw() {
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Fill whole canvas with dark blue
+      ctx.fillStyle = "#00008B";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw the central white circle
+      // Draw central white circle
       ctx.beginPath();
       ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
       ctx.fillStyle = "#ffffff";
       ctx.fill();
       ctx.closePath();
 
-      // Draw the full circle edge (white border)
+      // Draw white circle border
       ctx.beginPath();
       ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
       ctx.lineWidth = 4;
@@ -190,32 +171,25 @@
       ctx.stroke();
       ctx.closePath();
 
-      // Draw left slider's green arc along the edge
-      // Left slider arc goes from leftMaxAngle (bottom: 225°) to current leftAngle.
+      // Draw left slider green arc along the edge
       ctx.beginPath();
       ctx.lineWidth = 6;
-      ctx.strokeStyle = "#00FF00"; // green
-      // Convert degrees to radians
+      ctx.strokeStyle = "#00FF00";
       ctx.arc(centerX, centerY, circleRadius, toRadians(leftAngle), toRadians(leftMaxAngle));
       ctx.stroke();
       ctx.closePath();
 
-      // Draw right slider's green arc along the edge
-      // For the right handle, allowed arc from rightMinAngle (315°) to current rightAngle.
-      // When drawing, convert angles >=360 to normal [0,360] (i.e. subtract 360).
+      // Draw right slider green arc along the edge
       const drawRightMin = toRadians(rightMinAngle);
       const drawRightAngle = toRadians(rightAngle >= 360 ? rightAngle - 360 : rightAngle);
       ctx.beginPath();
       ctx.lineWidth = 6;
       ctx.strokeStyle = "#00FF00";
-      // Note: for the right slider, we want the arc drawn clockwise.
-      // Use arc with anticlockwise=false. If our current rightAngle (effective) is less than rightMinAngle (when normalized),
-      // we can swap start and end.
       ctx.arc(centerX, centerY, circleRadius, drawRightMin, drawRightAngle);
       ctx.stroke();
       ctx.closePath();
 
-      // Draw left handle circle
+      // Draw left handle
       const leftHandle = pointOnCircle(leftAngle);
       ctx.beginPath();
       ctx.arc(leftHandle.x, leftHandle.y, 10, 0, Math.PI * 2);
@@ -226,7 +200,7 @@
       ctx.stroke();
       ctx.closePath();
 
-      // Draw right handle circle
+      // Draw right handle
       const rightDisplayAngle = rightAngle >= 360 ? rightAngle - 360 : rightAngle;
       const rightHandle = pointOnCircle(rightDisplayAngle);
       ctx.beginPath();
@@ -238,21 +212,21 @@
       ctx.stroke();
       ctx.closePath();
 
-      // Write text in the center: frequencies and beat frequency difference
+      // Draw frequency texts in the center
       ctx.fillStyle = "#000000";
       ctx.font = "bold 20px Arial";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       const beatFrequency = Math.abs(leftFrequency - rightFrequency).toFixed(1);
-      const text = "Freq1: " + leftFrequency.toFixed(1) + " Hz\n" + 
-                   "Freq2: " + rightFrequency.toFixed(1) + " Hz\n" + 
-                   "Beat: " + beatFrequency + " Hz";
-      // Since canvas doesn't support multiline text by default, split lines:
-      const lines = text.split("\n");
-      for(let i=0; i<lines.length; i++){
-          ctx.fillText(lines[i], centerX, centerY - 30 + i*25);
-      }
-      
+      const lines = [
+        "Freq1: " + leftFrequency.toFixed(1) + " Hz",
+        "Freq2: " + rightFrequency.toFixed(1) + " Hz",
+        "Beat: " + beatFrequency + " Hz"
+      ];
+      lines.forEach((line, index) => {
+        ctx.fillText(line, centerX, centerY - 30 + index * 25);
+      });
+
       requestAnimationFrame(draw);
     }
     draw();
