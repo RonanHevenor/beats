@@ -3,9 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Modern Beat Frequency Generator - Enhanced</title>
+    <title>Modern Beat Frequency Generator - Refined</title>
     <style>
-      html, body {
+      html,
+      body {
         margin: 0;
         padding: 0;
         background-color: #00008B; /* dark blue background */
@@ -18,7 +19,7 @@
         width: 100%;
         height: 100%;
       }
-      /* Larger white circle (the control area) */
+      /* Larger white circle (control area) */
       #circle {
         position: absolute;
         width: 400px;
@@ -29,22 +30,17 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         overflow: hidden;
       }
-      /* Frequency display, centered inside the circle, styled nicely */
-      #frequency-display {
+      /* SVG arcs behind the handles */
+      #arc-svg {
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        text-align: center;
-        color: #333;
-        font-size: 20px;
-        font-weight: bold;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        top: 0;
+        left: 0;
+        z-index: 1;
       }
-      /* Draggable handles */
+      /* Draggable handles - bring them forward */
       .handle {
         position: absolute;
         width: 24px;
@@ -54,11 +50,35 @@
         border-radius: 50%;
         cursor: pointer;
         user-select: none;
+        z-index: 2;
       }
+      /* Frequency text for each arc */
+      .freq-num {
+        position: absolute;
+        color: #00AA00;
+        font-size: 32px;
+        font-weight: bold;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        z-index: 3;
+        white-space: nowrap;
+      }
+      /* Beat frequency text in the center below the circle */
+      #beat-freq {
+        position: absolute;
+        width: 100%;
+        text-align: center;
+        bottom: 20px;
+        color: #ffffff;
+        font-size: 40px;
+        font-weight: bold;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        z-index: 3;
+      }
+      
       /* Play/Pause button */
       #play-pause {
         position: absolute;
-        bottom: 40px;
+        bottom: 80px;
         left: 50%;
         transform: translateX(-50%);
         padding: 10px 20px;
@@ -68,13 +88,7 @@
         background-color: #00AA00;
         color: #ffffff;
         cursor: pointer;
-      }
-      /* SVG arcs behind the handles */
-      #arc-svg {
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 0;
+        z-index: 3;
       }
     </style>
   </head>
@@ -88,22 +102,22 @@
           <!-- Right arc path -->
           <path id="right-arc" fill="none" stroke="#00FF00" stroke-width="8" />
         </svg>
-        <!-- Frequency display inside the circle -->
-        <div id="frequency-display">
-          <div id="freq1-text">Freq1: 440.0 Hz</div>
-          <div id="freq2-text">Freq2: 445.0 Hz</div>
-          <div id="beat-text">Beat: 5.0 Hz</div>
-        </div>
         <!-- Draggable handles -->
         <div id="left-handle" class="handle"></div>
         <div id="right-handle" class="handle"></div>
       </div>
+      <!-- Frequency numbers positioned beside their arcs -->
+      <div id="left-freq" class="freq-num"></div>
+      <div id="right-freq" class="freq-num"></div>
+      <!-- Beat frequency (number only, no label) -->
+      <div id="beat-freq"></div>
       <button id="play-pause">Play</button>
     </div>
     <script>
       // Frequency mapping: frequencies in [400,480] Hz mapped linearly on a 90° arc.
-      // Left handle allowed angle: between 135° (freq 400) and 225° (freq 480).
-      // Right handle allowed angle: between -45° (freq 400) and 45° (freq 480).
+      // Allowed ranges:
+      // Left handle: between 135° (freq 400) and 225° (freq 480).
+      // Right handle: between -45° (freq 400) and 45° (freq 480).
       const freqMin = 400;
       const freqMax = 480;
       const angleRange = 90; // degrees
@@ -111,77 +125,87 @@
       // Default frequencies
       let leftFrequency = 440;
       let rightFrequency = 445;
-      
+
       // Compute default angles based on linear mapping.
-      // Left: angle = 225 - ((freq - 400)/(80))*90. For freq=440, angle = 225 - (40/80*90)=225 - 45 = 180.
+      // Left: angle = 225 - ((freq - 400)/(80))*90. For freq=440, angle = 225 - 45 = 180.
       let leftAngle = 225 - ((leftFrequency - freqMin) / (freqMax - freqMin)) * angleRange;
-      // Right: angle = -45 + ((freq - 400)/(80))*90. For freq=445, angle = -45 + (45/80*90) ≈ -45+50.625 = 5.625.
+      // Right: angle = -45 + ((freq - 400)/(80))*90. For freq=445, angle ≈ -45 + 50.625 = 5.625.
       let rightAngle = -45 + ((rightFrequency - freqMin) / (freqMax - freqMin)) * angleRange;
 
       // References to elements
       const circle = document.getElementById("circle");
       const leftHandle = document.getElementById("left-handle");
       const rightHandle = document.getElementById("right-handle");
-      const freq1Text = document.getElementById("freq1-text");
-      const freq2Text = document.getElementById("freq2-text");
-      const beatText = document.getElementById("beat-text");
+      const leftFreqText = document.getElementById("left-freq");
+      const rightFreqText = document.getElementById("right-freq");
+      const beatFreqText = document.getElementById("beat-freq");
       const playPauseButton = document.getElementById("play-pause");
       const leftArcPath = document.getElementById("left-arc");
       const rightArcPath = document.getElementById("right-arc");
 
-      // Compute circle properties
-      const circleRect = circle.getBoundingClientRect();
-      const circleSize = 400; // our fixed size for #circle
-      const circleRadius = circleSize / 2; // 200
+      // Circle properties (fixed size 400x400)
+      const circleSize = 400;
+      const circleRadius = circleSize / 2; //200
       const circleCenter = { x: circleRadius, y: circleRadius };
 
-      // Utility: convert polar coordinates to Cartesian within the circle's coordinate system.
+      // Utility: Convert polar coordinates to Cartesian (no -90 offset)
       function polarToCartesian(cx, cy, r, angleDeg) {
-        const angleRad = (angleDeg - 90) * Math.PI / 180.0;
+        const angleRad = (angleDeg) * Math.PI / 180.0;
         return {
           x: cx + r * Math.cos(angleRad),
           y: cy + r * Math.sin(angleRad)
         };
       }
 
-      // Utility: describe an SVG arc path given center, radius, start and end angles.
+      // Utility: Describe an SVG arc path given center, radius, start and end angles.
       function describeArc(cx, cy, r, startAngle, endAngle) {
-        const start = polarToCartesian(cx, cy, r, endAngle);
-        const end = polarToCartesian(cx, cy, r, startAngle);
+        const start = polarToCartesian(cx, cy, r, startAngle);
+        const end = polarToCartesian(cx, cy, r, endAngle);
         const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
         const d = [
           "M", start.x, start.y,
-          "A", r, r, 0, largeArcFlag, 0, end.x, end.y
+          "A", r, r, 0, largeArcFlag, 1, end.x, end.y
         ].join(" ");
         return d;
       }
 
-      // Set handle positions using the derived angles.
+      // Update handle positions based on current angles.
       function updateHandlePosition(handleElement, angleDeg) {
         const rad = angleDeg * Math.PI / 180;
-        // Calculate position within the 400x400 circle; center at (200,200)
         const x = circleCenter.x + circleRadius * Math.cos(rad) - handleElement.offsetWidth / 2;
         const y = circleCenter.y + circleRadius * Math.sin(rad) - handleElement.offsetHeight / 2;
         handleElement.style.left = x + "px";
         handleElement.style.top = y + "px";
       }
-
-      // Update both handle positions initially.
       updateHandlePosition(leftHandle, leftAngle);
       updateHandlePosition(rightHandle, rightAngle);
 
-      // Update frequency display and arcs.
+      // Update display: arcs, frequency numbers, beat frequency.
       function updateDisplay() {
-        const beat = Math.abs(leftFrequency - rightFrequency).toFixed(1);
-        freq1Text.textContent = "Freq1: " + leftFrequency.toFixed(1) + " Hz";
-        freq2Text.textContent = "Freq2: " + rightFrequency.toFixed(1) + " Hz";
-        beatText.textContent = "Beat: " + beat + " Hz";
+        // Update frequencies text values.
+        leftFreqText.textContent = leftFrequency.toFixed(0);
+        rightFreqText.textContent = rightFrequency.toFixed(0);
+        const beat = Math.abs(leftFrequency - rightFrequency).toFixed(0);
+        beatFreqText.textContent = beat;
         
-        // Update SVG arcs behind the handles.
-        // For left handle, draw arc from leftAngle to fixed 225°.
+        // Update SVG arcs.
+        // Left arc: from current leftAngle to fixed 225°.
         leftArcPath.setAttribute("d", describeArc(circleCenter.x, circleCenter.y, circleRadius - 10, leftAngle, 225));
-        // For right handle, draw arc from fixed -45° to rightAngle.
+        // Right arc: from fixed -45° to current rightAngle.
         rightArcPath.setAttribute("d", describeArc(circleCenter.x, circleCenter.y, circleRadius - 10, -45, rightAngle));
+
+        // Position frequency text elements.
+        // For left frequency, place text at the midpoint of the left arc.
+        let leftMidAngle = (leftAngle + 225) / 2;
+        let leftTextPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius + 30, leftMidAngle);
+        leftFreqText.style.left = (leftTextPos.x - leftFreqText.offsetWidth / 2) + "px";
+        leftFreqText.style.top = (leftTextPos.y - leftFreqText.offsetHeight / 2) + "px";
+
+        // For right frequency, place text at the midpoint of the right arc.
+        let rightMidAngle = (-45 + rightAngle) / 2;
+        let rightTextPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius + 30, rightMidAngle);
+        rightFreqText.style.left = (rightTextPos.x - rightFreqText.offsetWidth / 2) + "px";
+        rightFreqText.style.top = (rightTextPos.y - rightFreqText.offsetHeight / 2) + "px";
       }
       updateDisplay();
 
@@ -221,49 +245,42 @@
 
       // Dragging variables.
       let activeHandle = null;
-
       function handleMouseDown(e, handleType) {
         activeHandle = handleType;
         e.preventDefault();
       }
-
       leftHandle.addEventListener("mousedown", (e) => { handleMouseDown(e, "left"); });
       rightHandle.addEventListener("mousedown", (e) => { handleMouseDown(e, "right"); });
-
       document.addEventListener("mousemove", (e) => {
         if (!activeHandle) return;
-        // Get circle center relative to the viewport.
         const rect = circle.getBoundingClientRect();
-        const centerX = rect.left + circleCenter.x;
-        const centerY = rect.top + circleCenter.y;
-        const dx = e.clientX - centerX;
-        const dy = e.clientY - centerY;
+        const cx = rect.left + circleCenter.x;
+        const cy = rect.top + circleCenter.y;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
         let angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        // For consistency, do not normalize for left handle; for right handle we allow negative angles.
+        // For left handle (allowed 135° to 225°)
         if (activeHandle === "left") {
-          // Constrain between 135 and 225.
           if (angle < 135) angle = 135;
           if (angle > 225) angle = 225;
           leftAngle = angle;
-          // Map angle to frequency: frequency = 400 + ((225 - angle)/90)*80.
           leftFrequency = freqMin + ((225 - leftAngle) / angleRange) * (freqMax - freqMin);
           updateHandlePosition(leftHandle, leftAngle);
-        } else if (activeHandle === "right") {
-          // Constrain between -45 and 45.
+        }
+        // For right handle (allowed -45° to 45°)
+        else if (activeHandle === "right") {
           if (angle < -45) angle = -45;
           if (angle > 45) angle = 45;
           rightAngle = angle;
-          // Map angle to frequency: frequency = 400 + ((angle + 45)/90)*80.
           rightFrequency = freqMin + ((rightAngle + 45) / angleRange) * (freqMax - freqMin);
           updateHandlePosition(rightHandle, rightAngle);
         }
         updateDisplay();
-        if(audioStarted && audioRunning) {
+        if (audioStarted && audioRunning) {
           osc1.frequency.setValueAtTime(leftFrequency, audioCtx.currentTime);
           osc2.frequency.setValueAtTime(rightFrequency, audioCtx.currentTime);
         }
       });
-
       document.addEventListener("mouseup", () => {
         activeHandle = null;
       });
