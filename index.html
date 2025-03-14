@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Modern Beat Frequency Generator</title>
+  <title>Ronan's Beat Generator</title>
   <style>
     /* Reset some basic styles */
     * {
@@ -95,7 +95,7 @@
 <body>
   <canvas id="backgroundCanvas"></canvas>
   <div class="container">
-    <h1>Beat Frequency Generator</h1>
+    <h1>Ronan's Beat Frequency Generator</h1>
     <!-- Existing play/pause button -->
     <button id="playPauseButton" class="btn">&#9658;</button>
     <!-- New play unknown button -->
@@ -144,13 +144,11 @@
     // Function to ensure oscillators are started only once
     function startOscillatorsIfNeeded() {
       if (!audioStarted) {
-        // Start the oscillators only once as per Web Audio API restrictions
         try {
           osc1.start();
           osc2.start();
         } catch (e) {
           // Oscillators have already been started and cannot be restarted.
-          // In a more advanced implementation, you'd create new OscillatorNodes.
         }
         audioStarted = true;
       }
@@ -174,7 +172,7 @@
     // Play Unknown button event listener (toggles unknown mode)
     playUnknownButton.addEventListener('click', () => {
       if (!usingUnknown) {
-        // Activate unknown mode
+        // Activate unknown mode without changing the displayed frequency values
         usingUnknown = true;
         playPauseButton.disabled = true;
         freq1Slider.disabled = true;
@@ -182,17 +180,11 @@
         playUnknownButton.innerText = "Stop Unknown";
 
         // Generate unknown frequencies in the range 400-480 Hz
-        const unknownFreq1 = 402;
-        const unknownFreq2 = 405;
-
-        // Update display values
-        document.getElementById('freq1Value').innerText = unknownFreq1.toFixed(1);
-        document.getElementById('freq2Value').innerText = unknownFreq2.toFixed(1);
-        const beatFreq = Math.abs(unknownFreq1 - unknownFreq2);
-        document.getElementById('beatFrequency').innerText = beatFreq.toFixed(1);
+        const unknownFreq1 = Math.random() * (480 - 400) + 400;
+        const unknownFreq2 = Math.random() * (480 - 400) + 400;
 
         startOscillatorsIfNeeded();
-        // Set oscillators to unknown frequencies
+        // Set oscillators to unknown frequencies without updating display labels
         osc1.frequency.setValueAtTime(unknownFreq1, audioCtx.currentTime);
         osc2.frequency.setValueAtTime(unknownFreq2, audioCtx.currentTime);
       } else {
