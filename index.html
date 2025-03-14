@@ -5,239 +5,257 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Modern Beat Frequency Generator</title>
   <style>
-    /* Reset some basic styles */
-    * {
+    html, body {
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body, html {
-      width: 100%;
-      height: 100%;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #00008B; /* dark blue background */
       overflow: hidden;
-      background-color: #e0f7ff;
-    }
-    
-    /* Background canvas styles */
-    #backgroundCanvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 0;
-      width: 100%;
       height: 100%;
     }
-    
-    /* Container for content */
-    .container {
-      position: relative;
-      z-index: 1;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 2rem;
-      text-align: center;
-      background: rgba(255, 255, 255, 0.85);
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      top: 50%;
-      transform: translateY(-50%);
-    }
-    
-    h1 {
-      margin-bottom: 1rem;
-      font-size: 2rem;
-      color: #333;
-    }
-    
-    .slider-container {
-      margin: 1rem 0;
-      text-align: left;
-    }
-    
-    label {
+    canvas {
       display: block;
-      margin-bottom: 0.5rem;
-      font-weight: bold;
-      color: #555;
-    }
-    
-    input[type="range"] {
-      width: 100%;
-    }
-    
-    /* Button styling for play/pause */
-    #playPauseButton {
-      margin-bottom: 1.5rem;
-      background-color: #007BFF;
-      color: #fff;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 50px;
-      font-size: 1.2rem;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    
-    #playPauseButton:hover {
-      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
-  <canvas id="backgroundCanvas"></canvas>
-  <div class="container">
-    <h1>Beat Frequency Generator</h1>
-    <button id="playPauseButton">&#9658;</button>
-    <div class="slider-container">
-      <label for="freq1">Frequency 1: <span id="freq1Value">440.0</span> Hz</label>
-      <input type="range" id="freq1" min="400" max="480" value="440" step="0.1" oninput="updateFrequency()">
-    </div>
-    <div class="slider-container">
-      <label for="freq2">Frequency 2: <span id="freq2Value">445.0</span> Hz</label>
-      <input type="range" id="freq2" min="400" max="480" value="445" step="0.1" oninput="updateFrequency()">
-    </div>
-    <div class="slider-container">
-      <label>Beat Frequency: <span id="beatFrequency">5.0</span> Hz</label>
-    </div>
-  </div>
-
+  <canvas id="canvas"></canvas>
   <script>
-    // Audio context setup and oscillators
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let osc1 = audioCtx.createOscillator();
-    let osc2 = audioCtx.createOscillator();
+    // Get canvas and context
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
 
-    osc1.type = 'sine';
-    osc2.type = 'sine';
-
-    // Initial frequency values
-    osc1.frequency.setValueAtTime(440, audioCtx.currentTime);
-    osc2.frequency.setValueAtTime(445, audioCtx.currentTime);
-
-    // Connect oscillators to destination
-    osc1.connect(audioCtx.destination);
-    osc2.connect(audioCtx.destination);
-
-    // flag to check if oscillators are started
-    let audioStarted = false;
-    
-    // Play/Pause toggle button
-    const playPauseButton = document.getElementById('playPauseButton');
-
-    playPauseButton.addEventListener('click', () => {
-      if (!audioStarted) {
-        // Start the oscillators and update button icon
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume().then(() => {
-            playPauseButton.innerHTML = "&#10074;&#10074;"; // pause icon
-          });
-        } else {
-          // Start oscillators if not already started
-          osc1.start();
-          osc2.start();
-          playPauseButton.innerHTML = "&#10074;&#10074;"; // pause icon
-        }
-        audioStarted = true;
-      } else {
-        // Toggle audio context state
-        if (audioCtx.state === 'running') {
-          audioCtx.suspend().then(() => {
-            playPauseButton.innerHTML = "&#9658;"; // play icon
-          });
-        } else {
-          audioCtx.resume().then(() => {
-            playPauseButton.innerHTML = "&#10074;&#10074;"; // pause icon
-          });
-        }
-      }
-    });
-
-    function updateFrequency() {
-      const freq1 = parseFloat(document.getElementById('freq1').value);
-      const freq2 = parseFloat(document.getElementById('freq2').value);
-      
-      document.getElementById('freq1Value').innerText = freq1.toFixed(1);
-      document.getElementById('freq2Value').innerText = freq2.toFixed(1);
-      
-      osc1.frequency.setValueAtTime(freq1, audioCtx.currentTime);
-      osc2.frequency.setValueAtTime(freq2, audioCtx.currentTime);
-      
-      const beatFreq = Math.abs(freq1 - freq2);
-      document.getElementById('beatFrequency').innerText = beatFreq.toFixed(1);
-    }
-
-    // Background animation: drifting blue dots with connecting lines
-    const canvas = document.getElementById('backgroundCanvas');
-    const ctx = canvas.getContext('2d');
-    let dots = [];
-    const DOT_COUNT = 100;
-    const MAX_DISTANCE = 100;
-
-    // Set canvas size
+    // Set canvas size to window size
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      centerX = canvas.width / 2;
+      centerY = canvas.height / 2;
+      circleRadius = Math.min(canvas.width, canvas.height) / 3;
     }
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
-    // Dot constructor function
-    function Dot() {
-      this.x = Math.random() * canvas.width;
-      this.y = Math.random() * canvas.height;
-      this.vx = (Math.random() - 0.5) * 0.5;
-      this.vy = (Math.random() - 0.5) * 0.5;
+    // Center of the circle and circle radius
+    let centerX = canvas.width / 2;
+    let centerY = canvas.height / 2;
+    let circleRadius = Math.min(canvas.width, canvas.height) / 3;
+
+    // Allowed angle ranges (in degrees)
+    // Left slider: allowed between 135 (max freq) and 225 (min freq)
+    // Right slider: allowed between 315 (min freq) and 405 (max freq) 
+    // (We use values above 360 for ease; when drawing, we convert to modulo 360)
+    let leftMinAngle = 135, leftMaxAngle = 225;
+    let rightMinAngle = 315, rightMaxAngle = 405;
+
+    // Initial frequencies: mapping frequencies between 400 and 480 Hz.
+    // For left slider, frequency = 400 + ((leftMaxAngle - angle)/90)*80.
+    // For right slider, frequency = 400 + (((angle - rightMinAngle)/90))*80.
+    let leftFrequency, rightFrequency;
+    // Default: left frequency = 440 Hz, right frequency = 445 Hz.
+    // Compute initial angles based on inverse mapping:
+    // For left: angle = leftMaxAngle - ((freq - 400)/80)*90. For 440, that is:
+    let leftAngle = leftMaxAngle - ((440 - 400) / 80) * 90; // 225 - (40/80*90)=225 -45=180
+    let rightAngle = rightMinAngle + ((445 - 400) / 80) * 90; // 315 + (45/80*90)=315+50.625=365.625
+
+    function updateFrequencies() {
+      // For left slider: frequency increases as angle decreases.
+      leftFrequency = 400 + ((leftMaxAngle - leftAngle) / 90) * 80;
+      // For right slider: frequency increases as angle increases.
+      rightFrequency = 400 + ((rightAngle - rightMinAngle) / 90) * 80;
+      // Update audio oscillators if started
+      if(audioStarted){
+        osc1.frequency.setValueAtTime(leftFrequency, audioCtx.currentTime);
+        osc2.frequency.setValueAtTime(rightFrequency, audioCtx.currentTime);
+      }
+    }
+    updateFrequencies();
+
+    // Audio context and oscillators
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let osc1 = audioCtx.createOscillator();
+    let osc2 = audioCtx.createOscillator();
+    osc1.type = 'sine';
+    osc2.type = 'sine';
+    // Connect to destination
+    osc1.connect(audioCtx.destination);
+    osc2.connect(audioCtx.destination);
+    let audioStarted = false;  // Will start on first interaction
+
+    // Variables for dragging
+    let dragging = false;
+    let dragHandle = null; // "left" or "right"
+
+    // Convert degrees to radians
+    function toRadians(deg) {
+      return deg * Math.PI / 180;
     }
 
-    // Initialize dots
-    for (let i = 0; i < DOT_COUNT; i++) {
-      dots.push(new Dot());
+    // Given an angle (in degrees) on circle, return cartesian coordinates
+    function pointOnCircle(angleDeg) {
+      const angleRad = toRadians(angleDeg);
+      const x = centerX + circleRadius * Math.cos(angleRad);
+      const y = centerY + circleRadius * Math.sin(angleRad);
+      return { x, y };
     }
 
-    function animate() {
+    // Determine if a point (mx, my) is near a handle (within threshold)
+    function isNearHandle(mx, my, handlePos) {
+      const dx = mx - handlePos.x;
+      const dy = my - handlePos.y;
+      return Math.sqrt(dx * dx + dy * dy) < 15;
+    }
+
+    // Mouse event handlers
+    canvas.addEventListener("mousedown", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      // Start audio on first interaction if not started
+      if(!audioStarted){
+          // Start oscillators
+          osc1.start();
+          osc2.start();
+          audioStarted = true;
+      }
+
+      // Get positions of left and right handles
+      const leftPos = pointOnCircle(leftAngle);
+      // For right handle, use normal angle = rightAngle mod 360 for drawing.
+      const rightDisplayAngle = rightAngle >= 360 ? rightAngle - 360 : rightAngle;
+      const rightPos = pointOnCircle(rightDisplayAngle);
+
+      if(isNearHandle(mx, my, leftPos)) {
+        dragging = true;
+        dragHandle = "left";
+      } else if(isNearHandle(mx, my, rightPos)) {
+        dragging = true;
+        dragHandle = "right";
+      }
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+      if(!dragging) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      // Calculate angle from center to mouse (in degrees)
+      let angle = Math.atan2(my - centerY, mx - centerX) * 180 / Math.PI;
+      if(angle < 0) angle += 360;
+
+      if(dragHandle === "left") {
+        // Constrain angle between leftMinAngle and leftMaxAngle.
+        // Since allowed range is [135,225], if angle falls outside, clamp it.
+        if(angle < leftMinAngle) angle = leftMinAngle;
+        if(angle > leftMaxAngle) angle = leftMaxAngle;
+        leftAngle = angle;
+      } else if(dragHandle === "right") {
+        // For right slider, our allowed effective angle is between 315 and 405.
+        // If the computed angle is less than 315, add 360.
+        let effectiveAngle = angle;
+        if(effectiveAngle < rightMinAngle) effectiveAngle += 360;
+        if(effectiveAngle < rightMinAngle) effectiveAngle = rightMinAngle;
+        if(effectiveAngle > rightMaxAngle) effectiveAngle = rightMaxAngle;
+        rightAngle = effectiveAngle;
+      }
+      updateFrequencies();
+    });
+
+    canvas.addEventListener("mouseup", () => {
+      dragging = false;
+      dragHandle = null;
+    });
+    canvas.addEventListener("mouseout", () => {
+      dragging = false;
+      dragHandle = null;
+    });
+
+    function draw() {
+      // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Update dot positions
-      for (let dot of dots) {
-        dot.x += dot.vx;
-        dot.y += dot.vy;
 
-        // Wrap around edges
-        if (dot.x < 0) dot.x = canvas.width;
-        if (dot.x > canvas.width) dot.x = 0;
-        if (dot.y < 0) dot.y = canvas.height;
-        if (dot.y > canvas.height) dot.y = 0;
-      }
+      // Draw the central white circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.closePath();
 
-      // Draw lines between close dots
-      for (let i = 0; i < DOT_COUNT; i++) {
-        for (let j = i + 1; j < DOT_COUNT; j++) {
-          let dx = dots[i].x - dots[j].x;
-          let dy = dots[i].y - dots[j].y;
-          let distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < MAX_DISTANCE) {
-            let opacity = 1 - distance / MAX_DISTANCE;
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(0, 122, 255, ${opacity})`;
-            ctx.lineWidth = 1;
-            ctx.moveTo(dots[i].x, dots[i].y);
-            ctx.lineTo(dots[j].x, dots[j].y);
-            ctx.stroke();
-          }
-        }
-      }
+      // Draw the full circle edge (white border)
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+      ctx.closePath();
 
-      // Draw dots
-      for (let dot of dots) {
-        ctx.beginPath();
-        ctx.arc(dot.x, dot.y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = "#007AFF";
-        ctx.fill();
+      // Draw left slider's green arc along the edge
+      // Left slider arc goes from leftMaxAngle (bottom: 225°) to current leftAngle.
+      ctx.beginPath();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#00FF00"; // green
+      // Convert degrees to radians
+      ctx.arc(centerX, centerY, circleRadius, toRadians(leftAngle), toRadians(leftMaxAngle));
+      ctx.stroke();
+      ctx.closePath();
+
+      // Draw right slider's green arc along the edge
+      // For the right handle, allowed arc from rightMinAngle (315°) to current rightAngle.
+      // When drawing, convert angles >=360 to normal [0,360] (i.e. subtract 360).
+      const drawRightMin = toRadians(rightMinAngle);
+      const drawRightAngle = toRadians(rightAngle >= 360 ? rightAngle - 360 : rightAngle);
+      ctx.beginPath();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#00FF00";
+      // Note: for the right slider, we want the arc drawn clockwise.
+      // Use arc with anticlockwise=false. If our current rightAngle (effective) is less than rightMinAngle (when normalized),
+      // we can swap start and end.
+      ctx.arc(centerX, centerY, circleRadius, drawRightMin, drawRightAngle);
+      ctx.stroke();
+      ctx.closePath();
+
+      // Draw left handle circle
+      const leftHandle = pointOnCircle(leftAngle);
+      ctx.beginPath();
+      ctx.arc(leftHandle.x, leftHandle.y, 10, 0, Math.PI * 2);
+      ctx.fillStyle = dragHandle === "left" ? "#00FF00" : "#ffffff";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#00FF00";
+      ctx.stroke();
+      ctx.closePath();
+
+      // Draw right handle circle
+      const rightDisplayAngle = rightAngle >= 360 ? rightAngle - 360 : rightAngle;
+      const rightHandle = pointOnCircle(rightDisplayAngle);
+      ctx.beginPath();
+      ctx.arc(rightHandle.x, rightHandle.y, 10, 0, Math.PI * 2);
+      ctx.fillStyle = dragHandle === "right" ? "#00FF00" : "#ffffff";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#00FF00";
+      ctx.stroke();
+      ctx.closePath();
+
+      // Write text in the center: frequencies and beat frequency difference
+      ctx.fillStyle = "#000000";
+      ctx.font = "bold 20px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const beatFrequency = Math.abs(leftFrequency - rightFrequency).toFixed(1);
+      const text = "Freq1: " + leftFrequency.toFixed(1) + " Hz\n" + 
+                   "Freq2: " + rightFrequency.toFixed(1) + " Hz\n" + 
+                   "Beat: " + beatFrequency + " Hz";
+      // Since canvas doesn't support multiline text by default, split lines:
+      const lines = text.split("\n");
+      for(let i=0; i<lines.length; i++){
+          ctx.fillText(lines[i], centerX, centerY - 30 + i*25);
       }
-      requestAnimationFrame(animate);
+      
+      requestAnimationFrame(draw);
     }
-    animate();
+    draw();
   </script>
 </body>
 </html>
