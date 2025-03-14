@@ -39,7 +39,7 @@
       margin: 0 auto;
       padding: 2rem;
       text-align: center;
-      background: #ffffff;  /* white, 100% opacity */
+      background: #ffffff;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       top: 50%;
@@ -68,8 +68,8 @@
       width: 100%;
     }
     
-    /* Button styling for play/pause */
-    #playPauseButton {
+    /* Button styling for play/pause and unknown play */
+    .btn {
       margin-bottom: 1.5rem;
       background-color: #007BFF;
       color: #fff;
@@ -79,10 +79,16 @@
       font-size: 1.2rem;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      margin-right: 0.5rem;
     }
     
-    #playPauseButton:hover {
+    .btn:hover {
       background-color: #0056b3;
+    }
+    
+    .btn:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
     }
   </style>
 </head>
@@ -90,7 +96,10 @@
   <canvas id="backgroundCanvas"></canvas>
   <div class="container">
     <h1>Beat Frequency Generator</h1>
-    <button id="playPauseButton">&#9658;</button>
+    <!-- Existing play/pause button -->
+    <button id="playPauseButton" class="btn">&#9658;</button>
+    <!-- New play unknown button -->
+    <button id="playUnknownButton" class="btn">Play Unknown</button>
     <div class="slider-container">
       <label for="freq1">Frequency 1: <span id="freq1Value">440.0</span> Hz</label>
       <input type="range" id="freq1" min="400" max="480" value="440" step="0.1" oninput="updateFrequency()">
@@ -123,19 +132,25 @@
 
     // flag to check if oscillators are started
     let audioStarted = false;
-    
-    // Play/Pause toggle button
-    const playPauseButton = document.getElementById('playPauseButton');
+    // flag to check unknown button state
+    let usingUnknown = false;
 
+    // Get DOM elements
+    const playPauseButton = document.getElementById('playPauseButton');
+    const playUnknownButton = document.getElementById('playUnknownButton');
+    const freq1Slider = document.getElementById('freq1');
+    const freq2Slider = document.getElementById('freq2');
+
+    // Play/Pause toggle button event
     playPauseButton.addEventListener('click', () => {
+      if (usingUnknown) return; // Do nothing if unknown mode is active
       if (!audioStarted) {
-        // Start the oscillators and update button icon
+        // Start audio context if needed and start oscillators
         if (audioCtx.state === 'suspended') {
           audioCtx.resume().then(() => {
             playPauseButton.innerHTML = "&#10074;&#10074;"; // pause icon
           });
         } else {
-          // Start oscillators if not already started
           osc1.start();
           osc2.start();
           playPauseButton.innerHTML = "&#10074;&#10074;"; // pause icon
@@ -155,9 +170,51 @@
       }
     });
 
+    // Play Unknown button event listener
+    playUnknownButton.addEventListener('click', () => {
+      usingUnknown = true;
+      // Disable play/pause button and sliders
+      playPauseButton.disabled = true;
+      freq1Slider.disabled = true;
+      freq2Slider.disabled = true;
+
+      // Generate unknown frequencies in the range 400-480 Hz
+      const unknownFreq1 = Math.random() * (480 - 400) + 400;
+      const unknownFreq2 = Math.random() * (480 - 400) + 400;
+
+      // Update display
+      document.getElementById('freq1Value').innerText = unknownFreq1.toFixed(1);
+      document.getElementById('freq2Value').innerText = unknownFreq2.toFixed(1);
+      const beatFreq = Math.abs(unknownFreq1 - unknownFreq2);
+      document.getElementById('beatFrequency').innerText = beatFreq.toFixed(1);
+
+      // If audio hasn't started already, start the oscillators
+      if (!audioStarted) {
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume().then(() => {
+            osc1.start();
+            osc2.start();
+          });
+        } else {
+          osc1.start();
+          osc2.start();
+        }
+        audioStarted = true;
+      }
+      
+      // Set oscillators to unknown frequencies
+      osc1.frequency.setValueAtTime(unknownFreq1, audioCtx.currentTime);
+      osc2.frequency.setValueAtTime(unknownFreq2, audioCtx.currentTime);
+      
+      // Optionally, if desired, suspend play/pause toggling:
+      playUnknownButton.innerText = "Unknown Mode Active";
+      playUnknownButton.disabled = true;
+    });
+
     function updateFrequency() {
-      const freq1 = parseFloat(document.getElementById('freq1').value);
-      const freq2 = parseFloat(document.getElementById('freq2').value);
+      if (usingUnknown) return; // prevent updating if unknown mode is active
+      const freq1 = parseFloat(freq1Slider.value);
+      const freq2 = parseFloat(freq2Slider.value);
       
       document.getElementById('freq1Value').innerText = freq1.toFixed(1);
       document.getElementById('freq2Value').innerText = freq2.toFixed(1);
