@@ -57,6 +57,13 @@
       text-align: left;
     }
     
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+      color: #555;
+    }
+    
     input[type="range"] {
       width: 100%;
     }
@@ -97,9 +104,11 @@
     <button id="un1Button" class="btn">UN 1 (402 Hz)</button>
     <button id="un2Button" class="btn">UN 2 (405 Hz)</button>
     <div class="slider-container">
+      <label for="freq1">Frequency 1: <span id="freq1Value">440.0</span> Hz</label>
       <input type="range" id="freq1" min="400" max="480" value="440" step="0.1" oninput="updateFrequency()">
     </div>
     <div class="slider-container">
+      <label for="freq2">Frequency 2: <span id="freq2Value">445.0</span> Hz</label>
       <input type="range" id="freq2" min="400" max="480" value="445" step="0.1" oninput="updateFrequency()">
     </div>
     <div class="slider-container">
