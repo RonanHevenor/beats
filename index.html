@@ -122,7 +122,7 @@
     osc1.type = 'sine';
     osc2.type = 'sine';
 
-    // Initial frequency values
+    // Set initial frequencies
     osc1.frequency.setValueAtTime(440, audioCtx.currentTime);
     osc2.frequency.setValueAtTime(445, audioCtx.currentTime);
 
@@ -130,9 +130,9 @@
     osc1.connect(audioCtx.destination);
     osc2.connect(audioCtx.destination);
 
-    // flag to check if oscillators are started
+    // Flag for oscillator start (one-time start)
     let audioStarted = false;
-    // flag to check unknown button state
+    // Flag for unknown mode
     let usingUnknown = false;
 
     // Get DOM elements
@@ -141,84 +141,80 @@
     const freq1Slider = document.getElementById('freq1');
     const freq2Slider = document.getElementById('freq2');
 
-    // Play/Pause toggle button event
+    // Function to ensure oscillators are started only once
+    function startOscillatorsIfNeeded() {
+      if (!audioStarted) {
+        // Start the oscillators only once as per Web Audio API restrictions
+        try {
+          osc1.start();
+          osc2.start();
+        } catch (e) {
+          // Oscillators have already been started and cannot be restarted.
+          // In a more advanced implementation, you'd create new OscillatorNodes.
+        }
+        audioStarted = true;
+      }
+    }
+
+    // Play/Pause button event (for slider mode)
     playPauseButton.addEventListener('click', () => {
       if (usingUnknown) return; // Do nothing if unknown mode is active
-      if (!audioStarted) {
-        // Start audio context if needed and start oscillators
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume().then(() => {
-            playPauseButton.innerHTML = "&#10074;&#10074;"; // pause icon
-          });
-        } else {
-          osc1.start();
-          osc2.start();
-          playPauseButton.innerHTML = "&#10074;&#10074;"; // pause icon
-        }
-        audioStarted = true;
+      startOscillatorsIfNeeded();
+      if (audioCtx.state === 'running') {
+        audioCtx.suspend().then(() => {
+          playPauseButton.innerHTML = "&#9658;"; // play icon
+        });
       } else {
-        // Toggle audio context state
-        if (audioCtx.state === 'running') {
-          audioCtx.suspend().then(() => {
-            playPauseButton.innerHTML = "&#9658;"; // play icon
-          });
-        } else {
-          audioCtx.resume().then(() => {
-            playPauseButton.innerHTML = "&#10074;&#10074;"; // pause icon
-          });
-        }
+        audioCtx.resume().then(() => {
+          playPauseButton.innerHTML = "&#10074;&#10074;"; // pause icon
+        });
       }
     });
 
-    // Play Unknown button event listener
+    // Play Unknown button event listener (toggles unknown mode)
     playUnknownButton.addEventListener('click', () => {
-      usingUnknown = true;
-      // Disable play/pause button and sliders
-      playPauseButton.disabled = true;
-      freq1Slider.disabled = true;
-      freq2Slider.disabled = true;
+      if (!usingUnknown) {
+        // Activate unknown mode
+        usingUnknown = true;
+        playPauseButton.disabled = true;
+        freq1Slider.disabled = true;
+        freq2Slider.disabled = true;
+        playUnknownButton.innerText = "Stop Unknown";
 
-      // Generate unknown frequencies in the range 400-480 Hz
-      const unknownFreq1 = Math.random() * (480 - 400) + 400;
-      const unknownFreq2 = Math.random() * (480 - 400) + 400;
+        // Generate unknown frequencies in the range 400-480 Hz
+        const unknownFreq1 = Math.random() * (480 - 400) + 400;
+        const unknownFreq2 = Math.random() * (480 - 400) + 400;
 
-      // Update display
-      document.getElementById('freq1Value').innerText = unknownFreq1.toFixed(1);
-      document.getElementById('freq2Value').innerText = unknownFreq2.toFixed(1);
-      const beatFreq = Math.abs(unknownFreq1 - unknownFreq2);
-      document.getElementById('beatFrequency').innerText = beatFreq.toFixed(1);
+        // Update display values
+        document.getElementById('freq1Value').innerText = unknownFreq1.toFixed(1);
+        document.getElementById('freq2Value').innerText = unknownFreq2.toFixed(1);
+        const beatFreq = Math.abs(unknownFreq1 - unknownFreq2);
+        document.getElementById('beatFrequency').innerText = beatFreq.toFixed(1);
 
-      // If audio hasn't started already, start the oscillators
-      if (!audioStarted) {
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume().then(() => {
-            osc1.start();
-            osc2.start();
-          });
-        } else {
-          osc1.start();
-          osc2.start();
-        }
-        audioStarted = true;
+        startOscillatorsIfNeeded();
+        // Set oscillators to unknown frequencies
+        osc1.frequency.setValueAtTime(unknownFreq1, audioCtx.currentTime);
+        osc2.frequency.setValueAtTime(unknownFreq2, audioCtx.currentTime);
+      } else {
+        // Deactivate unknown mode and revert to slider mode
+        usingUnknown = false;
+        playPauseButton.disabled = false;
+        freq1Slider.disabled = false;
+        freq2Slider.disabled = false;
+        playUnknownButton.innerText = "Play Unknown";
       }
-      
-      // Set oscillators to unknown frequencies
-      osc1.frequency.setValueAtTime(unknownFreq1, audioCtx.currentTime);
-      osc2.frequency.setValueAtTime(unknownFreq2, audioCtx.currentTime);
-      
-      // Optionally, if desired, suspend play/pause toggling:
-      playUnknownButton.innerText = "Unknown Mode Active";
-      playUnknownButton.disabled = true;
     });
 
+    // Update frequencies via slider (only if not in unknown mode)
     function updateFrequency() {
-      if (usingUnknown) return; // prevent updating if unknown mode is active
+      if (usingUnknown) return; // Do not update if unknown mode is active
       const freq1 = parseFloat(freq1Slider.value);
       const freq2 = parseFloat(freq2Slider.value);
       
       document.getElementById('freq1Value').innerText = freq1.toFixed(1);
       document.getElementById('freq2Value').innerText = freq2.toFixed(1);
       
+      startOscillatorsIfNeeded();
       osc1.frequency.setValueAtTime(freq1, audioCtx.currentTime);
       osc2.frequency.setValueAtTime(freq2, audioCtx.currentTime);
       
