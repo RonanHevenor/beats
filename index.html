@@ -1,262 +1,239 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Modern Beat Frequency Generator</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background-color: #00008B; /* dark blue background */
-      overflow: hidden;
-      height: 100%;
-    }
-    canvas {
-      display: block;
-    }
-  </style>
-</head>
-<body>
-  <canvas id="canvas"></canvas>
-  <script>
-    // Get canvas and context
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
-
-    // Global geometry variables
-    let centerX, centerY, circleRadius;
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      centerX = canvas.width / 2;
-      centerY = canvas.height / 2;
-      circleRadius = Math.min(canvas.width, canvas.height) / 3;
-    }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
-
-    // Allowed angle ranges (in degrees) for each slider
-    // Left slider for frequency 1: allowed between 135° and 225°
-    // Right slider for frequency 2: allowed between 315° and 405° (405 means 45° when normalized)
-    const leftMinAngle = 135, leftMaxAngle = 225;
-    const rightMinAngle = 315, rightMaxAngle = 405;
-
-    // Initial slider positions
-    // Mapping: frequency in [400,480] Hz maps onto a 90° arc.
-    // Left: Freq1 = 400 at leftMaxAngle, 480 at leftMinAngle.
-    // Right: Freq2 = 400 at rightMinAngle, 480 at rightMaxAngle.
-    let leftAngle = leftMaxAngle - ((440 - 400) / 80) * (leftMaxAngle - leftMinAngle); // 180°
-    let rightAngle = rightMinAngle + ((445 - 400) / 80) * (rightMaxAngle - rightMinAngle); // ≈365.625°
-
-    let leftFrequency, rightFrequency;
-    function updateFrequencies() {
-      leftFrequency = 400 + ((leftMaxAngle - leftAngle) / (leftMaxAngle - leftMinAngle)) * 80;
-      rightFrequency = 400 + ((rightAngle - rightMinAngle) / (rightMaxAngle - rightMinAngle)) * 80;
-      if (audioStarted) {
-        osc1.frequency.setValueAtTime(leftFrequency, audioCtx.currentTime);
-        osc2.frequency.setValueAtTime(rightFrequency, audioCtx.currentTime);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple Beat Frequency Generator</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #00008B; /* dark blue background */
+        height: 100%;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
       }
-    }
-    updateFrequencies();
-
-    // Audio context and oscillators
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let osc1 = audioCtx.createOscillator();
-    let osc2 = audioCtx.createOscillator();
-    osc1.type = 'sine';
-    osc2.type = 'sine';
-    osc1.connect(audioCtx.destination);
-    osc2.connect(audioCtx.destination);
-    let audioStarted = false;
-
-    // Draggable state variables
-    let dragging = false;
-    let dragHandle = null; // "left" or "right"
-
-    // Utility: Convert degrees to radians
-    function toRadians(deg) {
-      return deg * Math.PI / 180;
-    }
-
-    // Given an angle (in degrees), compute the point on the circle's circumference.
-    function pointOnCircle(angleDeg) {
-      const angleRad = toRadians(angleDeg);
-      return {
-        x: centerX + circleRadius * Math.cos(angleRad),
-        y: centerY + circleRadius * Math.sin(angleRad)
+      .container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+      /* White circle (the control area) */
+      #circle {
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        background-color: #ffffff;
+        border: 4px solid #ffffff;
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      /* Frequency display is centered inside the circle */
+      #frequency-display {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: #000000;
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      /* Draggable handles */
+      .handle {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: #ffffff;
+        border: 2px solid #00AA00;
+        border-radius: 50%;
+        cursor: pointer;
+        user-select: none;
+      }
+      /* Play/Pause button */
+      #play-pause {
+        position: absolute;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        background-color: #00AA00;
+        color: #ffffff;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="circle">
+        <div id="frequency-display">
+          <div id="freq1-text">Freq1: 440 Hz</div>
+          <div id="freq2-text">Freq2: 445 Hz</div>
+          <div id="beat-text">Beat: 5 Hz</div>
+        </div>
+        <!-- Left handle for Frequency 1 -->
+        <div id="left-handle" class="handle"></div>
+        <!-- Right handle for Frequency 2 -->
+        <div id="right-handle" class="handle"></div>
+      </div>
+      <button id="play-pause">Play</button>
+    </div>
+    <script>
+      // Frequency mapping: frequency in [400,480] Hz from a 90° arc.
+      // Left handle allowed angle: between 135° (max frequency 400 Hz) and 225° (min frequency 480 Hz).
+      // Right handle allowed angle: between -45° (min frequency 400 Hz) and 45° (max frequency 480 Hz).
+      const freqMin = 400;
+      const freqMax = 480;
+      const angleRange = 90; // degrees
+      
+      // Default frequencies
+      let leftFrequency = 440;
+      let rightFrequency = 445;
+      
+      // Compute default angles based on linear mapping.
+      // For left handle: angle = 225 - ((freq - 400)/(80))*90 (so freq=440 gives 225 - (40/80*90)=225-45=180°).
+      let leftAngle = 225 - ((leftFrequency - freqMin) / (freqMax - freqMin)) * angleRange;
+      // For right handle: angle = -45 + ((freq - 400)/80)*90 (so freq=445 gives -45 + (45/80*90)).
+      let rightAngle = -45 + ((rightFrequency - freqMin) / (freqMax - freqMin)) * angleRange;
+      
+      // References to elements
+      const circle = document.getElementById("circle");
+      const leftHandle = document.getElementById("left-handle");
+      const rightHandle = document.getElementById("right-handle");
+      const freq1Text = document.getElementById("freq1-text");
+      const freq2Text = document.getElementById("freq2-text");
+      const beatText = document.getElementById("beat-text");
+      const playPauseButton = document.getElementById("play-pause");
+      
+      // Get circle properties (center coordinates, radius)
+      const circleRect = circle.getBoundingClientRect();
+      const circleRadius = circleRect.width / 2;
+      const circleCenter = {
+        x: circleRect.left + circleRadius,
+        y: circleRect.top + circleRadius
       };
-    }
-
-    // Determine if the mouse position (mx, my) is near a given handle (within 15px)
-    function isNearHandle(mx, my, handlePos) {
-      const dx = mx - handlePos.x;
-      const dy = my - handlePos.y;
-      return Math.sqrt(dx * dx + dy * dy) < 15;
-    }
-
-    // Mouse event handlers
-    canvas.addEventListener("mousedown", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-
-      if (!audioStarted) {
-        osc1.start();
-        osc2.start();
-        audioStarted = true;
+      
+      // Function to set handle positions based on angle (in degrees)
+      function updateHandlePosition(handleElement, angleDeg) {
+        const rad = angleDeg * Math.PI / 180;
+        // Position relative to circle container (300x300), with center at (150,150)
+        const x = circleRadius + circleRadius * Math.cos(rad) - handleElement.offsetWidth / 2;
+        const y = circleRadius + circleRadius * Math.sin(rad) - handleElement.offsetHeight / 2;
+        handleElement.style.left = x + "px";
+        handleElement.style.top = y + "px";
       }
-
-      const leftPos = pointOnCircle(leftAngle);
-      const rightDisplayAngle = rightAngle >= 360 ? rightAngle - 360 : rightAngle;
-      const rightPos = pointOnCircle(rightDisplayAngle);
-
-      if (isNearHandle(mx, my, leftPos)) {
-        dragging = true;
-        dragHandle = "left";
-      } else if (isNearHandle(mx, my, rightPos)) {
-        dragging = true;
-        dragHandle = "right";
+      
+      // Update both handles positions initially
+      updateHandlePosition(leftHandle, leftAngle);
+      updateHandlePosition(rightHandle, rightAngle);
+      
+      // Update frequency display
+      function updateDisplay() {
+        const beat = Math.abs(leftFrequency - rightFrequency).toFixed(1);
+        freq1Text.textContent = "Freq1: " + leftFrequency.toFixed(1) + " Hz";
+        freq2Text.textContent = "Freq2: " + rightFrequency.toFixed(1) + " Hz";
+        beatText.textContent = "Beat: " + beat + " Hz";
       }
-    });
-
-    canvas.addEventListener("mousemove", (e) => {
-      if (!dragging) return;
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      let angle = Math.atan2(my - centerY, mx - centerX) * 180 / Math.PI;
-      if (angle < 0) angle += 360;
-
-      if (dragHandle === "left") {
-        // Constrain angle between leftMinAngle and leftMaxAngle.
-        if (angle < leftMinAngle) angle = leftMinAngle;
-        if (angle > leftMaxAngle) angle = leftMaxAngle;
-        leftAngle = angle;
-      } else if (dragHandle === "right") {
-        // For right slider, adjust angle into the allowed range.
-        let effectiveAngle = angle;
-        if(effectiveAngle < rightMinAngle) effectiveAngle += 360;
-        if (effectiveAngle < rightMinAngle) effectiveAngle = rightMinAngle;
-        if (effectiveAngle > rightMaxAngle) effectiveAngle = rightMaxAngle;
-        rightAngle = effectiveAngle;
-      }
-      updateFrequencies();
-    });
-
-    canvas.addEventListener("mouseup", () => {
-      dragging = false;
-      dragHandle = null;
-    });
-    canvas.addEventListener("mouseout", () => {
-      dragging = false;
-      dragHandle = null;
-    });
-
-    // Alternate drawing approach: render two slider tracks along the circle.
-    function draw() {
-      // Clear canvas with dark blue background.
-      ctx.fillStyle = "#00008B";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw main white circle with a subtle shadow for depth.
-      ctx.save();
-      ctx.shadowColor = "rgba(0,0,0,0.4)";
-      ctx.shadowBlur = 8;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
-      ctx.closePath();
-      ctx.restore();
-
-      // Draw a white border around the circle.
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = "#ffffff";
-      ctx.stroke();
-      ctx.closePath();
-
-      // Draw left slider track.
-      // First, draw the base track as a light gray arc.
-      ctx.beginPath();
-      ctx.lineWidth = 8;
-      ctx.strokeStyle = "#cccccc";
-      ctx.arc(centerX, centerY, circleRadius, toRadians(leftMinAngle), toRadians(leftMaxAngle));
-      ctx.stroke();
-      ctx.closePath();
-
-      // Then draw the active portion (green) from leftAngle to leftMaxAngle.
-      ctx.beginPath();
-      ctx.lineWidth = 8;
-      ctx.strokeStyle = "#00FF00";
-      ctx.arc(centerX, centerY, circleRadius, toRadians(leftAngle), toRadians(leftMaxAngle));
-      ctx.stroke();
-      ctx.closePath();
-
-      // Draw the left slider handle.
-      let leftHandle = pointOnCircle(leftAngle);
-      ctx.beginPath();
-      ctx.arc(leftHandle.x, leftHandle.y, 12, 0, Math.PI * 2);
-      ctx.fillStyle = (dragHandle === "left") ? "#00FF00" : "#ffffff";
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#00FF00";
-      ctx.stroke();
-      ctx.closePath();
-
-      // Draw right slider track.
-      // Base track.
-      ctx.beginPath();
-      ctx.lineWidth = 8;
-      ctx.strokeStyle = "#cccccc";
-      // Normalize angles: for drawing, convert rightMaxAngle if necessary.
-      let normalizedRightMin = toRadians(rightMinAngle);
-      let normalizedRightMax = toRadians(rightAngle >= 360 ? rightAngle - 360 : rightMaxAngle);
-      ctx.arc(centerX, centerY, circleRadius, normalizedRightMin, normalizedRightMax);
-      ctx.stroke();
-      ctx.closePath();
-
-      // Active portion from rightMinAngle to current rightAngle.
-      ctx.beginPath();
-      ctx.lineWidth = 8;
-      ctx.strokeStyle = "#00FF00";
-      let currentRightAngle = toRadians(rightAngle >= 360 ? rightAngle - 360 : rightAngle);
-      ctx.arc(centerX, centerY, circleRadius, toRadians(rightMinAngle), currentRightAngle);
-      ctx.stroke();
-      ctx.closePath();
-
-      // Draw the right slider handle.
-      let rightDisplayAngle = rightAngle >= 360 ? rightAngle - 360 : rightAngle;
-      let rightHandle = pointOnCircle(rightDisplayAngle);
-      ctx.beginPath();
-      ctx.arc(rightHandle.x, rightHandle.y, 12, 0, Math.PI * 2);
-      ctx.fillStyle = (dragHandle === "right") ? "#00FF00" : "#ffffff";
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#00FF00";
-      ctx.stroke();
-      ctx.closePath();
-
-      // Draw frequency text in the center of the circle.
-      ctx.fillStyle = "#000000";
-      ctx.font = "bold 20px Arial";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      const beatFrequency = Math.abs(leftFrequency - rightFrequency).toFixed(1);
-      const lines = [
-        "Freq1: " + leftFrequency.toFixed(1) + " Hz",
-        "Freq2: " + rightFrequency.toFixed(1) + " Hz",
-        "Beat: "  + beatFrequency + " Hz"
-      ];
-      lines.forEach((line, i) => {
-        ctx.fillText(line, centerX, centerY - 30 + i * 25);
+      updateDisplay();
+      
+      // Audio setup
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      osc1.type = "sine";
+      osc2.type = "sine";
+      osc1.frequency.setValueAtTime(leftFrequency, audioCtx.currentTime);
+      osc2.frequency.setValueAtTime(rightFrequency, audioCtx.currentTime);
+      osc1.connect(audioCtx.destination);
+      osc2.connect(audioCtx.destination);
+      let audioStarted = false;
+      
+      // Toggle play/pause when button is clicked
+      let audioRunning = false;
+      playPauseButton.addEventListener("click", () => {
+        if (!audioStarted) {
+          osc1.start();
+          osc2.start();
+          audioCtx.resume();
+          audioStarted = true;
+          audioRunning = true;
+          playPauseButton.textContent = "Pause";
+        } else {
+          if (audioRunning) {
+            audioCtx.suspend();
+            playPauseButton.textContent = "Play";
+            audioRunning = false;
+          } else {
+            audioCtx.resume();
+            playPauseButton.textContent = "Pause";
+            audioRunning = true;
+          }
+        }
       });
-
-      requestAnimationFrame(draw);
-    }
-    draw();
-  </script>
-</body>
+      
+      let activeHandle = null;
+      
+      // mousedown event on handles
+      function handleMouseDown(e, handleType) {
+        activeHandle = handleType;
+        e.preventDefault();
+      }
+      
+      leftHandle.addEventListener("mousedown", (e) => {
+        handleMouseDown(e, "left");
+      });
+      rightHandle.addEventListener("mousedown", (e) => {
+        handleMouseDown(e, "right");
+      });
+      
+      // Mousemove event over the document to drag the handles
+      document.addEventListener("mousemove", (e) => {
+        if (!activeHandle) return;
+        // Get center of the circle (adjust for page scrolling using clientX/clientY)
+        const rect = circle.getBoundingClientRect();
+        const centerX = rect.left + circleRadius;
+        const centerY = rect.top + circleRadius;
+        const dx = e.clientX - centerX;
+        const dy = e.clientY - centerY;
+        let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        // Normalize angle to range (-180, 180]
+        if(angle > 180) angle -= 360;
+      
+        if (activeHandle === "left") {
+          // Constrain angle between 135 and 225 degrees.
+          // For simplicity, we map angles in [135,225] (which in our coordinate system are all >90).
+          // In our mapping we treat left handle angle in degrees as is.
+          if (angle < 135) angle = 135;
+          if (angle > 225) angle = 225;
+          leftAngle = angle;
+          // Map angle to frequency: frequency = 400 + ((225 - angle)/90)*80.
+          leftFrequency = freqMin + ((225 - leftAngle) / angleRange) * (freqMax - freqMin);
+          updateHandlePosition(leftHandle, leftAngle);
+        } else if (activeHandle === "right") {
+          // For right handle, allow angle between -45 and 45.
+          if (angle < -45) angle = -45;
+          if (angle > 45) angle = 45;
+          rightAngle = angle;
+          // Map angle to frequency: frequency = 400 + ((angle + 45)/90)*80.
+          rightFrequency = freqMin + ((rightAngle + 45) / angleRange) * (freqMax - freqMin);
+          updateHandlePosition(rightHandle, rightAngle);
+        }
+        updateDisplay();
+        if(audioStarted && audioRunning) {
+          osc1.frequency.setValueAtTime(leftFrequency, audioCtx.currentTime);
+          osc2.frequency.setValueAtTime(rightFrequency, audioCtx.currentTime);
+        }
+      });
+      
+      // Mouseup: stop dragging
+      document.addEventListener("mouseup", () => {
+        activeHandle = null;
+      });
+    </script>
+  </body>
 </html>
