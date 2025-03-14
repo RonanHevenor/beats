@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Modern Beat Frequency Generator - Refined</title>
+    <title>Modern Beat Frequency Generator - Moving Dots</title>
     <style>
       html,
       body {
@@ -40,7 +40,7 @@
         left: 0;
         z-index: 1;
       }
-      /* Draggable handles - bring them forward */
+      /* Draggable handles */
       .handle {
         position: absolute;
         width: 24px;
@@ -50,19 +50,28 @@
         border-radius: 50%;
         cursor: pointer;
         user-select: none;
+        z-index: 3;
+      }
+      /* Moving dots along each arc */
+      .moving-dot {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: #ffffff;
+        border-radius: 50%;
         z-index: 2;
       }
-      /* Frequency text for each arc */
+      /* Frequency number texts */
       .freq-num {
         position: absolute;
         color: #00AA00;
         font-size: 32px;
         font-weight: bold;
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-        z-index: 3;
+        z-index: 4;
         white-space: nowrap;
       }
-      /* Beat frequency text in the center below the circle */
+      /* Beat frequency (number only) below the circle */
       #beat-freq {
         position: absolute;
         width: 100%;
@@ -72,9 +81,8 @@
         font-size: 40px;
         font-weight: bold;
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-        z-index: 3;
+        z-index: 4;
       }
-      
       /* Play/Pause button */
       #play-pause {
         position: absolute;
@@ -88,7 +96,7 @@
         background-color: #00AA00;
         color: #ffffff;
         cursor: pointer;
-        z-index: 3;
+        z-index: 4;
       }
     </style>
   </head>
@@ -105,19 +113,22 @@
         <!-- Draggable handles -->
         <div id="left-handle" class="handle"></div>
         <div id="right-handle" class="handle"></div>
+        <!-- Moving dots -->
+        <div id="left-moving-dot" class="moving-dot"></div>
+        <div id="right-moving-dot" class="moving-dot"></div>
       </div>
-      <!-- Frequency numbers positioned beside their arcs -->
+      <!-- Frequency numbers beside their arcs -->
       <div id="left-freq" class="freq-num"></div>
       <div id="right-freq" class="freq-num"></div>
-      <!-- Beat frequency (number only, no label) -->
+      <!-- Beat frequency (number only) below the circle -->
       <div id="beat-freq"></div>
       <button id="play-pause">Play</button>
     </div>
     <script>
-      // Frequency mapping: frequencies in [400,480] Hz mapped linearly on a 90° arc.
+      // Frequency mapping: [400,480] Hz mapped linearly on a 90° arc.
       // Allowed ranges:
-      // Left handle: between 135° (freq 400) and 225° (freq 480).
-      // Right handle: between -45° (freq 400) and 45° (freq 480).
+      // Left handle: between 135° (400 Hz) and 225° (480 Hz).
+      // Right handle: between -45° (400 Hz) and 45° (480 Hz).
       const freqMin = 400;
       const freqMax = 480;
       const angleRange = 90; // degrees
@@ -142,15 +153,17 @@
       const playPauseButton = document.getElementById("play-pause");
       const leftArcPath = document.getElementById("left-arc");
       const rightArcPath = document.getElementById("right-arc");
+      const leftMovingDot = document.getElementById("left-moving-dot");
+      const rightMovingDot = document.getElementById("right-moving-dot");
 
       // Circle properties (fixed size 400x400)
       const circleSize = 400;
-      const circleRadius = circleSize / 2; //200
+      const circleRadius = circleSize / 2; // 200
       const circleCenter = { x: circleRadius, y: circleRadius };
 
-      // Utility: Convert polar coordinates to Cartesian (no -90 offset)
+      // Utility: Convert polar coordinates to Cartesian.
       function polarToCartesian(cx, cy, r, angleDeg) {
-        const angleRad = (angleDeg) * Math.PI / 180.0;
+        const angleRad = angleDeg * Math.PI / 180.0;
         return {
           x: cx + r * Math.cos(angleRad),
           y: cy + r * Math.sin(angleRad)
@@ -161,33 +174,31 @@
       function describeArc(cx, cy, r, startAngle, endAngle) {
         const start = polarToCartesian(cx, cy, r, startAngle);
         const end = polarToCartesian(cx, cy, r, endAngle);
+        // Use an arc sweep of 1
         const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-        const d = [
+        return [
           "M", start.x, start.y,
           "A", r, r, 0, largeArcFlag, 1, end.x, end.y
         ].join(" ");
-        return d;
       }
 
       // Update handle positions based on current angles.
       function updateHandlePosition(handleElement, angleDeg) {
-        const rad = angleDeg * Math.PI / 180;
-        const x = circleCenter.x + circleRadius * Math.cos(rad) - handleElement.offsetWidth / 2;
-        const y = circleCenter.y + circleRadius * Math.sin(rad) - handleElement.offsetHeight / 2;
-        handleElement.style.left = x + "px";
-        handleElement.style.top = y + "px";
+        const pos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius, angleDeg);
+        handleElement.style.left = (pos.x - handleElement.offsetWidth / 2) + "px";
+        handleElement.style.top = (pos.y - handleElement.offsetHeight / 2) + "px";
       }
       updateHandlePosition(leftHandle, leftAngle);
       updateHandlePosition(rightHandle, rightAngle);
 
-      // Update display: arcs, frequency numbers, beat frequency.
+      // Update display: arcs, frequency texts.
       function updateDisplay() {
-        // Update frequencies text values.
-        leftFreqText.textContent = leftFrequency.toFixed(0);
-        rightFreqText.textContent = rightFrequency.toFixed(0);
+        // Update frequency texts with "Hz" appended.
+        leftFreqText.textContent = leftFrequency.toFixed(0) + " Hz";
+        rightFreqText.textContent = rightFrequency.toFixed(0) + " Hz";
         const beat = Math.abs(leftFrequency - rightFrequency).toFixed(0);
         beatFreqText.textContent = beat;
-        
+
         // Update SVG arcs.
         // Left arc: from current leftAngle to fixed 225°.
         leftArcPath.setAttribute("d", describeArc(circleCenter.x, circleCenter.y, circleRadius - 10, leftAngle, 225));
@@ -195,15 +206,15 @@
         rightArcPath.setAttribute("d", describeArc(circleCenter.x, circleCenter.y, circleRadius - 10, -45, rightAngle));
 
         // Position frequency text elements.
-        // For left frequency, place text at the midpoint of the left arc.
-        let leftMidAngle = (leftAngle + 225) / 2;
-        let leftTextPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius + 30, leftMidAngle);
+        // For left frequency, compute the midpoint of the arc from leftAngle to 225.
+        let leftMidAngle = leftAngle + (225 - leftAngle) / 2;
+        let leftTextPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius + 20, leftMidAngle);
         leftFreqText.style.left = (leftTextPos.x - leftFreqText.offsetWidth / 2) + "px";
         leftFreqText.style.top = (leftTextPos.y - leftFreqText.offsetHeight / 2) + "px";
 
-        // For right frequency, place text at the midpoint of the right arc.
-        let rightMidAngle = (-45 + rightAngle) / 2;
-        let rightTextPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius + 30, rightMidAngle);
+        // For right frequency, compute the midpoint of the arc from -45 to rightAngle.
+        let rightMidAngle = -45 + (rightAngle + 45) / 2;
+        let rightTextPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius + 20, rightMidAngle);
         rightFreqText.style.left = (rightTextPos.x - rightFreqText.offsetWidth / 2) + "px";
         rightFreqText.style.top = (rightTextPos.y - rightFreqText.offsetHeight / 2) + "px";
       }
@@ -259,7 +270,7 @@
         const dx = e.clientX - cx;
         const dy = e.clientY - cy;
         let angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        // For left handle (allowed 135° to 225°)
+        // For left handle (allowed between 135° and 225°)
         if (activeHandle === "left") {
           if (angle < 135) angle = 135;
           if (angle > 225) angle = 225;
@@ -267,7 +278,7 @@
           leftFrequency = freqMin + ((225 - leftAngle) / angleRange) * (freqMax - freqMin);
           updateHandlePosition(leftHandle, leftAngle);
         }
-        // For right handle (allowed -45° to 45°)
+        // For right handle (allowed between -45° and 45°)
         else if (activeHandle === "right") {
           if (angle < -45) angle = -45;
           if (angle > 45) angle = 45;
@@ -284,6 +295,28 @@
       document.addEventListener("mouseup", () => {
         activeHandle = null;
       });
+
+      // Animation of moving dots.
+      const period = 2000; // animation period in ms
+      let lastTime = null;
+      function animateMovingDots(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        const elapsed = timestamp - lastTime;
+        // Calculate a normalized t in [0,1] for the current animation cycle.
+        const t = (timestamp % period) / period;
+        // For left moving dot: animate along arc from leftAngle to 225.
+        const leftDotAngle = leftAngle + t * (225 - leftAngle);
+        const leftDotPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius - 10, leftDotAngle);
+        leftMovingDot.style.left = (leftDotPos.x - leftMovingDot.offsetWidth / 2) + "px";
+        leftMovingDot.style.top = (leftDotPos.y - leftMovingDot.offsetHeight / 2) + "px";
+        // For right moving dot: animate along arc from -45 to rightAngle.
+        const rightDotAngle = -45 + t * (rightAngle + 45);
+        const rightDotPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius - 10, rightDotAngle);
+        rightMovingDot.style.left = (rightDotPos.x - rightMovingDot.offsetWidth / 2) + "px";
+        rightMovingDot.style.top = (rightDotPos.y - rightMovingDot.offsetHeight / 2) + "px";
+        requestAnimationFrame(animateMovingDots);
+      }
+      requestAnimationFrame(animateMovingDots);
     </script>
   </body>
 </html>
