@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beat Frequency Generator</title>
     <style>
+        body {
+            background-color: lightblue;
+        }
         .slider-container {
             margin: 20px;
         }
@@ -12,6 +15,7 @@
 </head>
 <body>
     <h1>Beat Frequency Generator</h1>
+    <button onclick="startAudio()">Start Audio</button>
     <div class="slider-container">
         <label for="freq1">Frequency 1: <span id="freq1Value">440</span> Hz</label>
         <input type="range" id="freq1" min="400" max="480" value="440" step="0.1" oninput="updateFrequency()">
@@ -38,8 +42,10 @@
         osc1.connect(audioCtx.destination);
         osc2.connect(audioCtx.destination);
 
-        osc1.start();
-        osc2.start();
+        function startAudio() {
+            osc1.start();
+            osc2.start();
+        }
 
         function updateFrequency() {
             const freq1 = parseFloat(document.getElementById('freq1').value);
