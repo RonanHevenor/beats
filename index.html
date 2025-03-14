@@ -3,23 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Modern Beat Frequency Generator - Moving Dots</title>
+    <title>Modern Beat Frequency Generator - Modernized</title>
     <style>
-      html,
-      body {
+      /* Reset & Basic Body */
+      html, body {
         margin: 0;
         padding: 0;
-        background-color: #00008B; /* dark blue background */
-        height: 100%;
         overflow: hidden;
-        font-family: 'Helvetica Neue', Arial, sans-serif;
+        background-color: #0a0f24;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #fff;
       }
+      /* Background canvas */
+      #bgCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 0;
+      }
+      /* Central container for controls */
       .container {
         position: relative;
+        z-index: 2;
         width: 100%;
         height: 100%;
       }
-      /* Larger white circle (control area) */
+      /* Main control circle */
       #circle {
         position: absolute;
         width: 400px;
@@ -30,17 +39,17 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        overflow: visible;
       }
-      /* SVG arcs behind the handles */
+      /* SVG arcs for indicators */
       #arc-svg {
         position: absolute;
         top: 0;
         left: 0;
         z-index: 1;
       }
-      /* Draggable handles */
+      /* Draggable handle style */
       .handle {
         position: absolute;
         width: 24px;
@@ -52,7 +61,7 @@
         user-select: none;
         z-index: 3;
       }
-      /* Moving dots along each arc */
+      /* Moving dot style */
       .moving-dot {
         position: absolute;
         width: 10px;
@@ -64,43 +73,49 @@
       /* Frequency number texts */
       .freq-num {
         position: absolute;
-        color: #00AA00;
         font-size: 32px;
         font-weight: bold;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        text-shadow: 1px 1px 5px rgba(0,0,0,0.6);
         z-index: 4;
         white-space: nowrap;
+        color: #00AA00;
       }
-      /* Beat frequency (number only) below the circle */
+      /* Beat frequency center text */
       #beat-freq {
         position: absolute;
         width: 100%;
         text-align: center;
         bottom: 20px;
-        color: #ffffff;
         font-size: 40px;
         font-weight: bold;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        text-shadow: 1px 1px 5px rgba(0,0,0,0.6);
         z-index: 4;
+        color: #fff;
       }
-      /* Play/Pause button */
+      /* State based play/pause button as icon */
       #play-pause {
         position: absolute;
         bottom: 80px;
         left: 50%;
         transform: translateX(-50%);
-        padding: 10px 20px;
-        font-size: 18px;
+        background: none;
         border: none;
-        border-radius: 5px;
-        background-color: #00AA00;
-        color: #ffffff;
         cursor: pointer;
         z-index: 4;
+        outline: none;
+      }
+      #play-pause svg {
+        width: 60px;
+        height: 60px;
+        fill: #00AA00;
+        filter: drop-shadow(1px 1px 5px rgba(0,0,0,0.6));
       }
     </style>
   </head>
   <body>
+    <!-- Background Canvas for drifting blue dots and connecting lines -->
+    <canvas id="bgCanvas"></canvas>
+
     <div class="container">
       <div id="circle">
         <!-- SVG for drawing arcs behind the handles -->
@@ -117,33 +132,104 @@
         <div id="left-moving-dot" class="moving-dot"></div>
         <div id="right-moving-dot" class="moving-dot"></div>
       </div>
-      <!-- Frequency numbers beside their arcs -->
+      <!-- Frequency number texts -->
       <div id="left-freq" class="freq-num"></div>
       <div id="right-freq" class="freq-num"></div>
-      <!-- Beat frequency (number only) below the circle -->
+      <!-- Beat frequency text -->
       <div id="beat-freq"></div>
-      <button id="play-pause">Play</button>
+      <!-- Play/Pause button with icon -->
+      <button id="play-pause">
+        <!-- Start with Play Icon -->
+        <svg id="play-icon" viewBox="0 0 64 64">
+          <polygon points="16,12 16,52 48,32" />
+        </svg>
+      </button>
     </div>
+
     <script>
-      // Frequency mapping: [400,480] Hz mapped linearly on a 90° arc.
-      // Allowed ranges:
-      // Left handle: between 135° (400 Hz) and 225° (480 Hz).
-      // Right handle: between -45° (400 Hz) and 45° (480 Hz).
+      /* ===============================
+         Background Animation - Drifting Blue Dots
+         =============================== */
+      const bgCanvas = document.getElementById("bgCanvas");
+      const bgCtx = bgCanvas.getContext("2d");
+      let bgWidth = window.innerWidth, bgHeight = window.innerHeight;
+      bgCanvas.width = bgWidth;
+      bgCanvas.height = bgHeight;
+
+      // Create 100 dots with random positions and velocities
+      const dotCount = 100;
+      const dots = [];
+      for (let i = 0; i < dotCount; i++) {
+        dots.push({
+          x: Math.random() * bgWidth,
+          y: Math.random() * bgHeight,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          radius: 2 + Math.random() * 2
+        });
+      }
+
+      function animateBackground() {
+        bgCtx.clearRect(0, 0, bgWidth, bgHeight);
+        // update positions
+        dots.forEach(dot => {
+          dot.x += dot.vx;
+          dot.y += dot.vy;
+          if(dot.x < 0 || dot.x > bgWidth) dot.vx *= -1;
+          if(dot.y < 0 || dot.y > bgHeight) dot.vy *= -1;
+        });
+        // Connect dots that are close
+        for(let i = 0; i < dotCount; i++){
+          for(let j = i + 1; j < dotCount; j++){
+            const dx = dots[i].x - dots[j].x;
+            const dy = dots[i].y - dots[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = 100;
+            if(dist < maxDist){
+              const opacity = 1 - dist/maxDist;
+              bgCtx.strokeStyle = "rgba(0,170,170," + opacity + ")";
+              bgCtx.lineWidth = 1;
+              bgCtx.beginPath();
+              bgCtx.moveTo(dots[i].x, dots[i].y);
+              bgCtx.lineTo(dots[j].x, dots[j].y);
+              bgCtx.stroke();
+            }
+          }
+        }
+        // Draw dots
+        dots.forEach(dot => {
+          bgCtx.fillStyle = "#00aaff";
+          bgCtx.beginPath();
+          bgCtx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
+          bgCtx.fill();
+        });
+        requestAnimationFrame(animateBackground);
+      }
+      animateBackground();
+
+      /* Update background canvas on window resize */
+      window.addEventListener('resize', function() {
+        bgWidth = window.innerWidth;
+        bgHeight = window.innerHeight;
+        bgCanvas.width = bgWidth;
+        bgCanvas.height = bgHeight;
+      });
+
+      /* ===============================
+         Main Control Area Logic
+         =============================== */
+      // Frequency mapping parameters
       const freqMin = 400;
       const freqMax = 480;
       const angleRange = 90; // degrees
 
-      // Default frequencies
+      // Default frequencies and computed angles
       let leftFrequency = 440;
       let rightFrequency = 445;
-
-      // Compute default angles based on linear mapping.
-      // Left: angle = 225 - ((freq - 400)/(80))*90. For freq=440, angle = 225 - 45 = 180.
       let leftAngle = 225 - ((leftFrequency - freqMin) / (freqMax - freqMin)) * angleRange;
-      // Right: angle = -45 + ((freq - 400)/(80))*90. For freq=445, angle ≈ -45 + 50.625 = 5.625.
       let rightAngle = -45 + ((rightFrequency - freqMin) / (freqMax - freqMin)) * angleRange;
 
-      // References to elements
+      // Element references
       const circle = document.getElementById("circle");
       const leftHandle = document.getElementById("left-handle");
       const rightHandle = document.getElementById("right-handle");
@@ -156,33 +242,30 @@
       const leftMovingDot = document.getElementById("left-moving-dot");
       const rightMovingDot = document.getElementById("right-moving-dot");
 
-      // Circle properties (fixed size 400x400)
+      // Circle fixed properties
       const circleSize = 400;
-      const circleRadius = circleSize / 2; // 200
+      const circleRadius = circleSize / 2; //200
       const circleCenter = { x: circleRadius, y: circleRadius };
 
       // Utility: Convert polar coordinates to Cartesian.
       function polarToCartesian(cx, cy, r, angleDeg) {
-        const angleRad = angleDeg * Math.PI / 180.0;
+        const angleRad = angleDeg * Math.PI / 180;
         return {
           x: cx + r * Math.cos(angleRad),
           y: cy + r * Math.sin(angleRad)
         };
       }
-
-      // Utility: Describe an SVG arc path given center, radius, start and end angles.
+      // Utility: Describe SVG arc path.
       function describeArc(cx, cy, r, startAngle, endAngle) {
         const start = polarToCartesian(cx, cy, r, startAngle);
         const end = polarToCartesian(cx, cy, r, endAngle);
-        // Use an arc sweep of 1
         const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
         return [
           "M", start.x, start.y,
           "A", r, r, 0, largeArcFlag, 1, end.x, end.y
         ].join(" ");
       }
-
-      // Update handle positions based on current angles.
+      // Update handle positions.
       function updateHandlePosition(handleElement, angleDeg) {
         const pos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius, angleDeg);
         handleElement.style.left = (pos.x - handleElement.offsetWidth / 2) + "px";
@@ -191,36 +274,32 @@
       updateHandlePosition(leftHandle, leftAngle);
       updateHandlePosition(rightHandle, rightAngle);
 
-      // Update display: arcs, frequency texts.
+      // Update control display (arcs, texts)
       function updateDisplay() {
-        // Update frequency texts with "Hz" appended.
         leftFreqText.textContent = leftFrequency.toFixed(0) + " Hz";
         rightFreqText.textContent = rightFrequency.toFixed(0) + " Hz";
         const beat = Math.abs(leftFrequency - rightFrequency).toFixed(0);
         beatFreqText.textContent = beat;
 
-        // Update SVG arcs.
-        // Left arc: from current leftAngle to fixed 225°.
+        // Left arc: from leftAngle to fixed 225
         leftArcPath.setAttribute("d", describeArc(circleCenter.x, circleCenter.y, circleRadius - 10, leftAngle, 225));
-        // Right arc: from fixed -45° to current rightAngle.
+        // Right arc: from fixed -45 to rightAngle
         rightArcPath.setAttribute("d", describeArc(circleCenter.x, circleCenter.y, circleRadius - 10, -45, rightAngle));
 
-        // Position frequency text elements.
-        // For left frequency, compute the midpoint of the arc from leftAngle to 225.
+        // Position frequency texts at arc midpoints
         let leftMidAngle = leftAngle + (225 - leftAngle) / 2;
-        let leftTextPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius + 20, leftMidAngle);
-        leftFreqText.style.left = (leftTextPos.x - leftFreqText.offsetWidth / 2) + "px";
-        leftFreqText.style.top = (leftTextPos.y - leftFreqText.offsetHeight / 2) + "px";
+        let leftPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius + 20, leftMidAngle);
+        leftFreqText.style.left = (leftPos.x - leftFreqText.offsetWidth / 2) + "px";
+        leftFreqText.style.top = (leftPos.y - leftFreqText.offsetHeight / 2) + "px";
 
-        // For right frequency, compute the midpoint of the arc from -45 to rightAngle.
         let rightMidAngle = -45 + (rightAngle + 45) / 2;
-        let rightTextPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius + 20, rightMidAngle);
-        rightFreqText.style.left = (rightTextPos.x - rightFreqText.offsetWidth / 2) + "px";
-        rightFreqText.style.top = (rightTextPos.y - rightFreqText.offsetHeight / 2) + "px";
+        let rightPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius + 20, rightMidAngle);
+        rightFreqText.style.left = (rightPos.x - rightFreqText.offsetWidth / 2) + "px";
+        rightFreqText.style.top = (rightPos.y - rightFreqText.offsetHeight / 2) + "px";
       }
       updateDisplay();
 
-      // Audio setup.
+      // Audio context & setup.
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const osc1 = audioCtx.createOscillator();
       const osc2 = audioCtx.createOscillator();
@@ -233,6 +312,7 @@
       let audioStarted = false;
       let audioRunning = false;
 
+      // Toggle play/pause with state-based icon.
       playPauseButton.addEventListener("click", () => {
         if (!audioStarted) {
           osc1.start();
@@ -240,24 +320,37 @@
           audioCtx.resume();
           audioStarted = true;
           audioRunning = true;
-          playPauseButton.textContent = "Pause";
+          setPauseIcon();
         } else {
           if (audioRunning) {
             audioCtx.suspend();
-            playPauseButton.textContent = "Play";
             audioRunning = false;
+            setPlayIcon();
           } else {
             audioCtx.resume();
-            playPauseButton.textContent = "Pause";
             audioRunning = true;
+            setPauseIcon();
           }
         }
       });
+      function setPlayIcon() {
+        playPauseButton.innerHTML = `
+          <svg id="play-icon" viewBox="0 0 64 64">
+            <polygon points="16,12 16,52 48,32" />
+          </svg>`;
+      }
+      function setPauseIcon() {
+        playPauseButton.innerHTML = `
+          <svg id="pause-icon" viewBox="0 0 64 64">
+            <rect x="16" y="12" width="10" height="40"></rect>
+            <rect x="38" y="12" width="10" height="40"></rect>
+          </svg>`;
+      }
 
-      // Dragging variables.
+      // Dragging logic
       let activeHandle = null;
-      function handleMouseDown(e, handleType) {
-        activeHandle = handleType;
+      function handleMouseDown(e, type) {
+        activeHandle = type;
         e.preventDefault();
       }
       leftHandle.addEventListener("mousedown", (e) => { handleMouseDown(e, "left"); });
@@ -270,16 +363,13 @@
         const dx = e.clientX - cx;
         const dy = e.clientY - cy;
         let angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        // For left handle (allowed between 135° and 225°)
         if (activeHandle === "left") {
           if (angle < 135) angle = 135;
           if (angle > 225) angle = 225;
           leftAngle = angle;
           leftFrequency = freqMin + ((225 - leftAngle) / angleRange) * (freqMax - freqMin);
           updateHandlePosition(leftHandle, leftAngle);
-        }
-        // For right handle (allowed between -45° and 45°)
-        else if (activeHandle === "right") {
+        } else if (activeHandle === "right") {
           if (angle < -45) angle = -45;
           if (angle > 45) angle = 45;
           rightAngle = angle;
@@ -296,20 +386,17 @@
         activeHandle = null;
       });
 
-      // Animation of moving dots.
-      const period = 2000; // animation period in ms
-      let lastTime = null;
+      // Animate moving dots along arcs.
+      const period = 2000; // ms for one cycle
       function animateMovingDots(timestamp) {
-        if (!lastTime) lastTime = timestamp;
-        const elapsed = timestamp - lastTime;
-        // Calculate a normalized t in [0,1] for the current animation cycle.
         const t = (timestamp % period) / period;
-        // For left moving dot: animate along arc from leftAngle to 225.
+        // Animate left moving dot along arc: from leftAngle to 225.
         const leftDotAngle = leftAngle + t * (225 - leftAngle);
         const leftDotPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius - 10, leftDotAngle);
         leftMovingDot.style.left = (leftDotPos.x - leftMovingDot.offsetWidth / 2) + "px";
         leftMovingDot.style.top = (leftDotPos.y - leftMovingDot.offsetHeight / 2) + "px";
-        // For right moving dot: animate along arc from -45 to rightAngle.
+
+        // Animate right moving dot along arc: from -45 to rightAngle.
         const rightDotAngle = -45 + t * (rightAngle + 45);
         const rightDotPos = polarToCartesian(circleCenter.x, circleCenter.y, circleRadius - 10, rightDotAngle);
         rightMovingDot.style.left = (rightDotPos.x - rightMovingDot.offsetWidth / 2) + "px";
