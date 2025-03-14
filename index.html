@@ -17,7 +17,6 @@
       height: 100%;
       font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
       overflow: hidden;
-      /* Dark blue background */
       background-color: #001f3f;
     }
     
@@ -68,7 +67,7 @@
       width: 100%;
     }
     
-    /* Button styling for play/pause and the UN buttons */
+    /* Button styling for play/pause and UN buttons */
     .btn {
       margin-bottom: 1.5rem;
       background-color: #007BFF;
@@ -96,9 +95,9 @@
   <canvas id="backgroundCanvas"></canvas>
   <div class="container">
     <h1>Ronan's Beat Frequency Generator</h1>
-    <!-- Play/Pause button for beat mode -->
+    <!-- Beat Mode: Play/Pause button controls the slider tones -->
     <button id="playPauseButton" class="btn">&#9658;</button>
-    <!-- UN buttons for separate single frequency tones (completely independent) -->
+    <!-- UN buttons are entirely independent -->
     <button id="un1Button" class="btn">UN 1</button>
     <button id="un2Button" class="btn">UN 2</button>
     <div class="slider-container">
@@ -112,83 +111,77 @@
   </div>
 
   <script>
-    // Audio context setup
+    // Use a single audio context for everything.
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Oscillators for beat mode (play/pause + sliders)
+    // --- Beat Mode Oscillators (Slider Tones) ---
+    // Create two oscillators and route them through a dedicated gain node.
     let osc1 = audioCtx.createOscillator();
     let osc2 = audioCtx.createOscillator();
+    let beatGain = audioCtx.createGain();
+    // By default, beat mode is "playing" (gain 1).
+    beatGain.gain.value = 1;
 
     osc1.type = 'sine';
     osc2.type = 'sine';
-
-    // Set initial frequencies for beat mode
+    // Set initial frequencies.
     osc1.frequency.setValueAtTime(440, audioCtx.currentTime);
     osc2.frequency.setValueAtTime(445, audioCtx.currentTime);
 
-    // Connect beat mode oscillators to destination
-    osc1.connect(audioCtx.destination);
-    osc2.connect(audioCtx.destination);
+    // Connect oscillators to beatGain, then to the destination.
+    osc1.connect(beatGain);
+    osc2.connect(beatGain);
+    beatGain.connect(audioCtx.destination);
 
-    // Flag for beat oscillator start
-    let audioStarted = false;
+    // Start the beat oscillators on the first user interaction.
+    let beatOscStarted = false;
+    function startBeatOscillators() {
+      if (!beatOscStarted) {
+        osc1.start();
+        osc2.start();
+        beatOscStarted = true;
+      }
+    }
 
-    // Get DOM elements for beat mode controls
+    // Get DOM elements for beat mode controls.
     const playPauseButton = document.getElementById('playPauseButton');
     const freq1Slider = document.getElementById('freq1');
     const freq2Slider = document.getElementById('freq2');
+    const freq1ValueEl = document.getElementById('freq1Value');
+    const freq2ValueEl = document.getElementById('freq2Value');
 
-    // Function to ensure beat oscillators start only once
-    function startOscillatorsIfNeeded() {
-      if (!audioStarted) {
-        try {
-          osc1.start();
-          osc2.start();
-        } catch (e) {
-          // Already started; do nothing.
-        }
-        audioStarted = true;
-      }
-    }
-
-    // Play/Pause button event for beat mode
+    // Play/Pause toggles only the beat mode (slider tones) using the beatGain node.
     playPauseButton.addEventListener('click', () => {
-      startOscillatorsIfNeeded();
-      if (audioCtx.state === 'running') {
-        audioCtx.suspend().then(() => {
-          playPauseButton.innerHTML = "&#9658;"; // play icon
-        });
+      startBeatOscillators();
+      if (beatGain.gain.value > 0) {
+        beatGain.gain.value = 0;
+        playPauseButton.innerHTML = "&#9658;"; // Show play icon.
       } else {
-        audioCtx.resume().then(() => {
-          playPauseButton.innerHTML = "&#10074;&#10074;"; // pause icon
-        });
+        beatGain.gain.value = 1;
+        playPauseButton.innerHTML = "&#10074;&#10074;"; // Show pause icon.
       }
     });
 
-    // Update frequencies via slider for beat mode
+    // Slider update: changes beat oscillator frequency AND forces beat tones to play.
     function updateFrequency() {
+      startBeatOscillators();
       const freq1 = parseFloat(freq1Slider.value);
       const freq2 = parseFloat(freq2Slider.value);
       
-      document.getElementById('freq1Value').innerText = freq1.toFixed(1);
-      document.getElementById('freq2Value').innerText = freq2.toFixed(1);
-
-      // If a slider is moved, force play state (resume oscillators if paused)
-      if (audioCtx.state !== 'running') {
-        audioCtx.resume().then(() => {
-          playPauseButton.innerHTML = "&#10074;&#10074;"; // pause icon
-        });
-      } else {
-        playPauseButton.innerHTML = "&#10074;&#10074;"; // ensure pause icon is shown
-      }
+      freq1ValueEl.textContent = freq1.toFixed(1);
+      freq2ValueEl.textContent = freq2.toFixed(1);
       
-      // Ensure oscillators are started and update their frequencies
-      startOscillatorsIfNeeded();
       osc1.frequency.setValueAtTime(freq1, audioCtx.currentTime);
       osc2.frequency.setValueAtTime(freq2, audioCtx.currentTime);
+      
+      // If beat mode is paused, force it to play without affecting UN oscillators.
+      if (beatGain.gain.value === 0) {
+        beatGain.gain.value = 1;
+        playPauseButton.innerHTML = "&#10074;&#10074;";
+      }
     }
 
-    // --- UN Oscillators (completely standalone) ---
+    // --- UN Oscillators (Standalone) ---
     let un1Osc = null;
     let un2Osc = null;
     let un1Playing = false;
@@ -197,7 +190,7 @@
     const un1Button = document.getElementById('un1Button');
     const un2Button = document.getElementById('un2Button');
 
-    // Function to create and start a single frequency oscillator
+    // Function to create and start a single-frequency oscillator.
     function startUnOsc(frequency) {
       const oscillator = audioCtx.createOscillator();
       oscillator.type = 'sine';
@@ -207,38 +200,35 @@
       return oscillator;
     }
 
-    // UN 1 button event: Toggle oscillator at 402 Hz (standalone)
+    // UN 1 button toggles an oscillator at 402 Hz.
     un1Button.addEventListener('click', () => {
-      audioCtx.resume().then(() => {
-        if (!un1Playing) {
-          un1Osc = startUnOsc(402);
-          un1Playing = true;
-          un1Button.innerText = "Stop UN 1";
-        } else {
-          un1Osc.stop();
-          un1Osc.disconnect();
-          un1Osc = null;
-          un1Playing = false;
-          un1Button.innerText = "UN 1";
-        }
-      });
+      // Neither starts nor stops the beat (slider) tones.
+      if (!un1Playing) {
+        un1Osc = startUnOsc(402);
+        un1Playing = true;
+        un1Button.innerText = "Stop UN 1";
+      } else {
+        un1Osc.stop();
+        un1Osc.disconnect();
+        un1Osc = null;
+        un1Playing = false;
+        un1Button.innerText = "UN 1";
+      }
     });
 
-    // UN 2 button event: Toggle oscillator at 405 Hz (standalone)
+    // UN 2 button toggles an oscillator at 405 Hz.
     un2Button.addEventListener('click', () => {
-      audioCtx.resume().then(() => {
-        if (!un2Playing) {
-          un2Osc = startUnOsc(405);
-          un2Playing = true;
-          un2Button.innerText = "Stop UN 2";
-        } else {
-          un2Osc.stop();
-          un2Osc.disconnect();
-          un2Osc = null;
-          un2Playing = false;
-          un2Button.innerText = "UN 2";
-        }
-      });
+      if (!un2Playing) {
+        un2Osc = startUnOsc(405);
+        un2Playing = true;
+        un2Button.innerText = "Stop UN 2";
+      } else {
+        un2Osc.stop();
+        un2Osc.disconnect();
+        un2Osc = null;
+        un2Playing = false;
+        un2Button.innerText = "UN 2";
+      }
     });
 
     // --- Background Animation ---
@@ -248,7 +238,6 @@
     const DOT_COUNT = 100;
     const MAX_DISTANCE = 100;
 
-    // Set canvas size
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -256,7 +245,6 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Dot constructor function
     function Dot() {
       this.x = Math.random() * canvas.width;
       this.y = Math.random() * canvas.height;
@@ -264,24 +252,20 @@
       this.vy = (Math.random() - 0.5) * 0.5;
     }
 
-    // Initialize dots
     for (let i = 0; i < DOT_COUNT; i++) {
       dots.push(new Dot());
     }
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Update dot positions
       for (let dot of dots) {
         dot.x += dot.vx;
         dot.y += dot.vy;
-        // Wrap around edges
         if (dot.x < 0) dot.x = canvas.width;
         if (dot.x > canvas.width) dot.x = 0;
         if (dot.y < 0) dot.y = canvas.height;
         if (dot.y > canvas.height) dot.y = 0;
       }
-      // Draw lines between close dots with neon-light royal blue color
       for (let i = 0; i < DOT_COUNT; i++) {
         for (let j = i + 1; j < DOT_COUNT; j++) {
           let dx = dots[i].x - dots[j].x;
@@ -298,7 +282,6 @@
           }
         }
       }
-      // Draw neon-light royal blue dots
       for (let dot of dots) {
         ctx.beginPath();
         ctx.arc(dot.x, dot.y, 3, 0, Math.PI * 2);
