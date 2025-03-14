@@ -8,7 +8,7 @@
     html, body {
       margin: 0;
       padding: 0;
-      background-color: #00008B; /* dark blue */
+      background-color: #00008B; /* dark blue background */
       overflow: hidden;
       height: 100%;
     }
@@ -24,9 +24,10 @@
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    // Declare center and radius variables
+    // Declare center and radius values
     let centerX, centerY, circleRadius;
-    // Function to set canvas size and update circle metrics
+
+    // Set canvas size and update circle metrics
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -35,24 +36,22 @@
       circleRadius = Math.min(canvas.width, canvas.height) / 3;
     }
     window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+    resizeCanvas();  // initialize on load
 
-    // Allowed angle ranges (in degrees)
-    let leftMinAngle = 135, leftMaxAngle = 225;
-    let rightMinAngle = 315, rightMaxAngle = 405;
+    // Define allowed angle ranges (in degrees)
+    const leftMinAngle = 135, leftMaxAngle = 225;
+    const rightMinAngle = 315, rightMaxAngle = 405;
 
-    // Initial frequencies mapping (400-480 Hz)
-    // Defaults: left frequency 440 Hz, right frequency 445 Hz.
+    // Initial frequencies and corresponding angles (map 400-480 Hz onto a 90° range)
     let leftFrequency, rightFrequency;
-    let leftAngle = leftMaxAngle - ((440 - 400) / 80) * 90; // 180°
-    let rightAngle = rightMinAngle + ((445 - 400) / 80) * 90; // ≈365.625°
+    // Default: left frequency = 440 Hz, right frequency = 445 Hz.
+    let leftAngle = leftMaxAngle - ((440 - 400) / 80) * 90;   // 225 - 45 = 180°
+    let rightAngle = rightMinAngle + ((445 - 400) / 80) * 90;  // 315 + ~50.6 ≈ 365.6°
 
     function updateFrequencies() {
-      // Left frequency increases as angle decreases.
       leftFrequency = 400 + ((leftMaxAngle - leftAngle) / 90) * 80;
-      // Right frequency increases as angle increases.
       rightFrequency = 400 + ((rightAngle - rightMinAngle) / 90) * 80;
-      if(audioStarted) {
+      if (audioStarted) {
         osc1.frequency.setValueAtTime(leftFrequency, audioCtx.currentTime);
         osc2.frequency.setValueAtTime(rightFrequency, audioCtx.currentTime);
       }
@@ -69,31 +68,32 @@
     osc2.connect(audioCtx.destination);
     let audioStarted = false;
 
-    // Dragging variables
+    // Variables for dragging
     let dragging = false;
     let dragHandle = null; // "left" or "right"
 
-    // Utility: convert degrees to radians
+    // Utility: Convert degrees to radians
     function toRadians(deg) {
       return deg * Math.PI / 180;
     }
 
-    // Return Cartesian coordinates on the circle for given angle
+    // Get a point on the circle edge for a given angle (in degrees)
     function pointOnCircle(angleDeg) {
       const angleRad = toRadians(angleDeg);
-      const x = centerX + circleRadius * Math.cos(angleRad);
-      const y = centerY + circleRadius * Math.sin(angleRad);
-      return { x, y };
+      return {
+        x: centerX + circleRadius * Math.cos(angleRad),
+        y: centerY + circleRadius * Math.sin(angleRad)
+      };
     }
 
-    // Check if point (mx, my) is near a given handle position
+    // Check if point is near a handle (within a threshold)
     function isNearHandle(mx, my, handlePos) {
       const dx = mx - handlePos.x;
       const dy = my - handlePos.y;
       return Math.sqrt(dx * dx + dy * dy) < 15;
     }
 
-    // Mouse events on the canvas
+    // Mouse events for dragging handles
     canvas.addEventListener("mousedown", (e) => {
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
@@ -106,13 +106,14 @@
       }
 
       const leftPos = pointOnCircle(leftAngle);
+      // Normalize right angle for display (if over 360, subtract 360)
       const rightDisplayAngle = rightAngle >= 360 ? rightAngle - 360 : rightAngle;
       const rightPos = pointOnCircle(rightDisplayAngle);
 
-      if(isNearHandle(mx, my, leftPos)) {
+      if (isNearHandle(mx, my, leftPos)) {
         dragging = true;
         dragHandle = "left";
-      } else if(isNearHandle(mx, my, rightPos)) {
+      } else if (isNearHandle(mx, my, rightPos)) {
         dragging = true;
         dragHandle = "right";
       }
@@ -120,22 +121,21 @@
 
     canvas.addEventListener("mousemove", (e) => {
       if (!dragging) return;
-
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
       let angle = Math.atan2(my - centerY, mx - centerX) * 180 / Math.PI;
-      if(angle < 0) angle += 360;
+      if (angle < 0) angle += 360;
 
-      if(dragHandle === "left") {
-        if(angle < leftMinAngle) angle = leftMinAngle;
-        if(angle > leftMaxAngle) angle = leftMaxAngle;
+      if (dragHandle === "left") {
+        if (angle < leftMinAngle) angle = leftMinAngle;
+        if (angle > leftMaxAngle) angle = leftMaxAngle;
         leftAngle = angle;
-      } else if(dragHandle === "right") {
+      } else if (dragHandle === "right") {
         let effectiveAngle = angle;
-        if(effectiveAngle < rightMinAngle) effectiveAngle += 360;
-        if(effectiveAngle < rightMinAngle) effectiveAngle = rightMinAngle;
-        if(effectiveAngle > rightMaxAngle) effectiveAngle = rightMaxAngle;
+        if (effectiveAngle < rightMinAngle) effectiveAngle += 360;
+        if (effectiveAngle < rightMinAngle) effectiveAngle = rightMinAngle;
+        if (effectiveAngle > rightMaxAngle) effectiveAngle = rightMaxAngle;
         rightAngle = effectiveAngle;
       }
       updateFrequencies();
@@ -150,13 +150,13 @@
       dragHandle = null;
     });
 
-    // Draw everything on the canvas
+    // Main drawing loop
     function draw() {
-      // Fill whole canvas with dark blue
+      // Draw dark blue background every frame
       ctx.fillStyle = "#00008B";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw central white circle
+      // Draw the central white circle
       ctx.beginPath();
       ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
       ctx.fillStyle = "#ffffff";
@@ -171,7 +171,7 @@
       ctx.stroke();
       ctx.closePath();
 
-      // Draw left slider green arc along the edge
+      // Draw the left slider's green arc along the edge (from current leftAngle to leftMaxAngle)
       ctx.beginPath();
       ctx.lineWidth = 6;
       ctx.strokeStyle = "#00FF00";
@@ -179,7 +179,7 @@
       ctx.stroke();
       ctx.closePath();
 
-      // Draw right slider green arc along the edge
+      // Draw the right slider's green arc along the edge (from rightMinAngle to current rightAngle)
       const drawRightMin = toRadians(rightMinAngle);
       const drawRightAngle = toRadians(rightAngle >= 360 ? rightAngle - 360 : rightAngle);
       ctx.beginPath();
@@ -193,7 +193,7 @@
       const leftHandle = pointOnCircle(leftAngle);
       ctx.beginPath();
       ctx.arc(leftHandle.x, leftHandle.y, 10, 0, Math.PI * 2);
-      ctx.fillStyle = dragHandle === "left" ? "#00FF00" : "#ffffff";
+      ctx.fillStyle = (dragHandle === "left") ? "#00FF00" : "#ffffff";
       ctx.fill();
       ctx.lineWidth = 2;
       ctx.strokeStyle = "#00FF00";
@@ -205,14 +205,14 @@
       const rightHandle = pointOnCircle(rightDisplayAngle);
       ctx.beginPath();
       ctx.arc(rightHandle.x, rightHandle.y, 10, 0, Math.PI * 2);
-      ctx.fillStyle = dragHandle === "right" ? "#00FF00" : "#ffffff";
+      ctx.fillStyle = (dragHandle === "right") ? "#00FF00" : "#ffffff";
       ctx.fill();
       ctx.lineWidth = 2;
       ctx.strokeStyle = "#00FF00";
       ctx.stroke();
       ctx.closePath();
 
-      // Draw frequency texts in the center
+      // Draw frequency values in the center of the circle
       ctx.fillStyle = "#000000";
       ctx.font = "bold 20px Arial";
       ctx.textAlign = "center";
@@ -223,6 +223,7 @@
         "Freq2: " + rightFrequency.toFixed(1) + " Hz",
         "Beat: " + beatFrequency + " Hz"
       ];
+      // Adjust vertical position to center the multi-line text
       lines.forEach((line, index) => {
         ctx.fillText(line, centerX, centerY - 30 + index * 25);
       });
