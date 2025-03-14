@@ -28,6 +28,7 @@
       height: 100%;
     }
     /* Video element: appears on top of dots */
+    /* Remove 'loop' so the video plays only once */
     #rickVideo {
       position: fixed;
       top: 0;
@@ -38,7 +39,7 @@
       display: none;
       z-index: 2;
     }
-    /* Overlay to cover the page until fully unveiled */
+    /* Overlay to conceal the video until unveiled */
     #overlay {
       position: fixed;
       top: 0;
@@ -84,8 +85,8 @@
   <!-- Floating blue dots canvas -->
   <canvas id="dotsCanvas"></canvas>
 
-  <!-- Video element for Rick Astley background -->
-  <video id="rickVideo" playsinline loop>
+  <!-- Video element for Rick Astley background (without loop) -->
+  <video id="rickVideo" playsinline>
     <source src="Rick_Astley_Never_Gonna_Give_You_Up.mp4" type="video/mp4">
   </video>
 
@@ -278,6 +279,8 @@
     animateDots();
     
     // ------------------------------ Video Reveal Logic ------------------------------
+    // When the Rick Astley video plays, pause all tones until it's over.
+    // We'll use a click sequence to prepare video playback on a 5-minute mark, stored in a cookie so it doesn't play again.
     const overlay = document.getElementById('overlay');
     const rickVideo = document.getElementById('rickVideo');
     let clickCounter = 0;
@@ -288,7 +291,7 @@
     document.addEventListener('click', function handleInteraction() {
       clickCounter++;
       if (clickCounter === 1) {
-        // First click: display the video (but keep it hidden behind the overlay).
+        // First click: display the video element (but keep it hidden behind the overlay).
         rickVideo.style.display = "block";
         console.log("First click: Video element displayed behind overlay.");
       } else if (clickCounter === 2) {
@@ -297,35 +300,45 @@
         unmuteCompleted = true;
         console.log("Second click: Video unmuted.");
       } else if (clickCounter === 3) {
-        // Third click: mark video ready to play at a 5-minute mark.
+        // Third click: mark video ready to play at the next 5-minute mark.
         readyToPlay = true;
         console.log("Third click: Video set to play at next 5-minute mark.");
-        // Remove this listener if further click control is not needed.
         document.removeEventListener('click', handleInteraction);
       }
     });
     
-    // Check every second if we're at a 5-minute mark (minute % 5 === 0 and seconds === 0),
-    // and only trigger if the user has completed the unmute process and set to readyToPlay.
+    // On reaching next 5-minute mark, play video only if conditions met and cookie not set.
     const minuteChecker = setInterval(() => {
       const now = new Date();
-      // Check for 5-minute mark and if video hasn't played before (cookie not set)
+      // 5-minute mark: minutes divisible by 5 and second === 0.
       if ((now.getMinutes() % 5 === 0) && (now.getSeconds() === 0) && readyToPlay && unmuteCompleted && (document.cookie.indexOf("rickPlayed=true") === -1)) {
-        rickVideo.play().then(() => {
-          console.log("5-minute mark reached: Video is now playing.");
-        }).catch(err => {
-          console.error("Error playing video:", err);
+        // Pause all tones by suspending the audio context.
+        audioCtx.suspend().then(() => {
+          console.log("Audio context suspended: Tones paused.");
+          rickVideo.play().then(() => {
+            console.log("5-minute mark reached: Video is now playing.");
+          }).catch(err => {
+            console.error("Error playing video:", err);
+          });
+          // Unveil the video by fading out the overlay.
+          overlay.style.opacity = 0;
+          setTimeout(() => {
+            overlay.style.display = "none";
+          }, 1000);
         });
-        overlay.style.opacity = 0;
-        setTimeout(() => {
-          overlay.style.display = "none";
-        }, 1000);
-        // Store a cookie so that the video doesn't play again on this computer.
-        document.cookie = "rickPlayed=true; path=/; max-age=31536000"; // 1 year expiration
+        
+        // When the video ends, resume the audio context.
+        rickVideo.addEventListener('ended', () => {
+          audioCtx.resume().then(() => {
+            console.log("Video ended: Audio context resumed, tones back on.");
+          });
+        });
+        
+        // Store cookie so video doesn't play again.
+        document.cookie = "rickPlayed=true; path=/; max-age=31536000"; // 1 year
         clearInterval(minuteChecker);
       }
     }, 1000);
-    
   </script>
 </body>
 </html>
