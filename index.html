@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Modern Beat Frequency Generator</title>
   <style>
-    /* Reset some basic styles */
+    /* Reset */
     * {
       margin: 0;
       padding: 0;
@@ -15,37 +15,39 @@
     body, html {
       width: 100%;
       height: 100%;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-family: Arial, sans-serif;
       overflow: hidden;
       background-color: #001f3f;
     }
     
-    /* Background canvas styles */
-    #backgroundCanvas {
+    /* Overlay covering the site initially */
+    #overlay {
       position: fixed;
       top: 0;
       left: 0;
-      z-index: 0;
       width: 100%;
       height: 100%;
+      background-color: #001f3f;
+      z-index: 10;
+      transition: opacity 1s ease;
     }
     
-    /* Video background styles */
+    /* Video element positioned behind the overlay */
     #rickVideo {
       position: fixed;
       top: 0;
       left: 0;
-      z-index: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: none;
+      z-index: 5;
     }
     
-    /* Container for content as a white box with 100% opacity */
+    /* Container content layer (buttons etc.) */
     .container {
       position: relative;
-      z-index: 1;
+      z-index: 20;
       max-width: 600px;
       margin: 0 auto;
       padding: 2rem;
@@ -57,31 +59,9 @@
       transform: translateY(-50%);
     }
     
-    h1 {
-      margin-bottom: 1rem;
-      font-size: 2rem;
-      color: #333;
-    }
-    
-    .slider-container {
-      margin: 1rem 0;
-      text-align: left;
-    }
-    
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: bold;
-      color: #555;
-    }
-    
-    input[type="range"] {
-      width: 100%;
-    }
-    
-    /* Button styling for play/pause and UN buttons */
+    /* Button styling */
     .btn {
-      margin-bottom: 1.5rem;
+      margin: 0.5rem;
       background-color: #007BFF;
       color: #fff;
       border: none;
@@ -90,30 +70,26 @@
       font-size: 1.2rem;
       cursor: pointer;
       transition: background-color 0.3s ease;
-      margin-right: 0.5rem;
     }
     
     .btn:hover {
       background-color: #0056b3;
     }
-    
-    .btn:disabled {
-      background-color: #aaa;
-      cursor: not-allowed;
-    }
   </style>
 </head>
 <body>
-  <canvas id="backgroundCanvas"></canvas>
-  <!-- Video element for Rick Astley background with playsinline -->
-  <video id="rickVideo" loop playsinline>
+  <!-- Blue overlay covering the site -->
+  <div id="overlay"></div>
+  
+  <!-- Video element (initially hidden) -->
+  <video id="rickVideo" playsinline loop>
     <source src="Rick_Astley_Never_Gonna_Give_You_Up.mp4" type="video/mp4">
   </video>
+  
+  <!-- Main content -->
   <div class="container">
     <h1>Ronan's Beat Frequency Generator</h1>
-    <!-- Beat Mode: Play/Pause button controls the slider tones -->
     <button id="playPauseButton" class="btn">&#9658;</button>
-    <!-- UN buttons are entirely independent -->
     <button id="un1Button" class="btn">UN 1</button>
     <button id="un2Button" class="btn">UN 2</button>
     <div class="slider-container">
@@ -127,10 +103,9 @@
   </div>
 
   <script>
-    // Use a single audio context for everything.
+    // Basic audio & beat setup (your existing code remains unchanged)
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // --- Beat Mode Oscillators (Slider Tones) ---
     let osc1 = audioCtx.createOscillator();
     let osc2 = audioCtx.createOscillator();
     let beatGain = audioCtx.createGain();
@@ -138,6 +113,7 @@
 
     osc1.type = 'sine';
     osc2.type = 'sine';
+
     osc1.frequency.setValueAtTime(440, audioCtx.currentTime);
     osc2.frequency.setValueAtTime(445, audioCtx.currentTime);
 
@@ -182,13 +158,13 @@
       osc1.frequency.setValueAtTime(freq1, audioCtx.currentTime);
       osc2.frequency.setValueAtTime(freq2, audioCtx.currentTime);
       
+      // Force play state if paused
       if (beatGain.gain.value === 0) {
         beatGain.gain.value = 1;
         playPauseButton.innerHTML = "&#10074;&#10074;";
       }
     }
 
-    // --- UN Oscillators (Standalone) ---
     let un1Osc = null;
     let un2Osc = null;
     let un1Playing = false;
@@ -234,99 +210,39 @@
       }
     });
 
-    // --- Background Animation (Dots) ---
-    const canvas = document.getElementById('backgroundCanvas');
-    const ctx = canvas.getContext('2d');
-    let dots = [];
-    const DOT_COUNT = 100;
-    const MAX_DISTANCE = 100;
-
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function Dot() {
-      this.x = Math.random() * canvas.width;
-      this.y = Math.random() * canvas.height;
-      this.vx = (Math.random() - 0.5) * 0.5;
-      this.vy = (Math.random() - 0.5) * 0.5;
-    }
-
-    for (let i = 0; i < DOT_COUNT; i++) {
-      dots.push(new Dot());
-    }
-
-    function animateDots() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let dot of dots) {
-        dot.x += dot.vx;
-        dot.y += dot.vy;
-        if (dot.x < 0) dot.x = canvas.width;
-        if (dot.x > canvas.width) dot.x = 0;
-        if (dot.y < 0) dot.y = canvas.height;
-        if (dot.y > canvas.height) dot.y = 0;
-      }
-      for (let i = 0; i < DOT_COUNT; i++) {
-        for (let j = i + 1; j < DOT_COUNT; j++) {
-          let dx = dots[i].x - dots[j].x;
-          let dy = dots[i].y - dots[j].y;
-          let distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < MAX_DISTANCE) {
-            let opacity = 1 - distance / MAX_DISTANCE;
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(65, 105, 225, ${opacity})`;
-            ctx.lineWidth = 1;
-            ctx.moveTo(dots[i].x, dots[i].y);
-            ctx.lineTo(dots[j].x, dots[j].y);
-            ctx.stroke();
-          }
-        }
-      }
-      for (let dot of dots) {
-        ctx.beginPath();
-        ctx.arc(dot.x, dot.y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = "#4169E1";
-        ctx.fill();
-      }
-      requestAnimationFrame(animateDots);
-    }
-    animateDots();
-
-    // --- Background Switcher ---
-    // After the first user interaction, start a timer so that 10 seconds later the Rick Astley video is shown.
+    // --- Custom Video Reveal Logic ---
+    const overlay = document.getElementById('overlay');
     const rickVideo = document.getElementById('rickVideo');
-    let videoTriggered = false;
-    const triggerVideo = () => {
-      if (!videoTriggered) {
-        videoTriggered = true;
-        // Remove muted property so video plays with sound.
-        rickVideo.muted = false;
-        setTimeout(() => {
-          // Ensure the video is loaded
-          rickVideo.load();
-          rickVideo.style.display = "block";
-          canvas.style.display = "none";
-          rickVideo.volume = 2; // Browsers may cap volume at 1.
-          rickVideo.play().then(() => {
-            console.log("Video playing successfully.");
-          }).catch((err) => {
-            console.error("Video play failed: ", err);
-          });
-        }, 10000);
-      }
-    };
+    let clickCounter = 0;
 
-    // Listen for a user interaction to trigger the video timer.
-    const interactionHandler = () => {
-      triggerVideo();
-      document.removeEventListener('click', interactionHandler);
-      document.removeEventListener('keydown', interactionHandler);
-    };
-    document.addEventListener('click', interactionHandler);
-    document.addEventListener('keydown', interactionHandler);
+    // Listen for any button clicks on the page.
+    // For simplicity, we attach the listener to the document.
+    document.addEventListener('click', function handleInteraction() {
+      clickCounter++;
+      if (clickCounter === 1) {
+        // First click: Pull up (display) the video behind the overlay.
+        rickVideo.style.display = "block";
+        console.log("First click: Video is now loaded behind the overlay.");
+      } else if (clickCounter === 2) {
+        // Second click: Unmute the video (still behind the overlay).
+        rickVideo.muted = false;
+        console.log("Second click: Video unmuted.");
+      } else if (clickCounter === 3) {
+        // Third click: Play the video and reveal it by fading out the overlay.
+        rickVideo.play().then(() => {
+          console.log("Third click: Video is playing.");
+        }).catch(err => {
+          console.error("Error playing video:", err);
+        });
+        overlay.style.opacity = 0;
+        setTimeout(() => {
+          overlay.style.display = "none";
+        }, 1000);
+        console.log("Third click: Overlay removed. Video unveiled.");
+        // Remove this event listener if no further click control is needed.
+        document.removeEventListener('click', handleInteraction);
+      }
+    });
   </script>
 </body>
 </html>
