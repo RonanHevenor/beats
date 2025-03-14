@@ -131,25 +131,20 @@
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     // --- Beat Mode Oscillators (Slider Tones) ---
-    // Create two oscillators and route them through a dedicated gain node.
     let osc1 = audioCtx.createOscillator();
     let osc2 = audioCtx.createOscillator();
     let beatGain = audioCtx.createGain();
-    // By default, beat mode is "playing" (gain 1).
     beatGain.gain.value = 1;
 
     osc1.type = 'sine';
     osc2.type = 'sine';
-    // Set initial frequencies.
     osc1.frequency.setValueAtTime(440, audioCtx.currentTime);
     osc2.frequency.setValueAtTime(445, audioCtx.currentTime);
 
-    // Connect oscillators to beatGain, then to the destination.
     osc1.connect(beatGain);
     osc2.connect(beatGain);
     beatGain.connect(audioCtx.destination);
 
-    // Start the beat oscillators on the first user interaction.
     let beatOscStarted = false;
     function startBeatOscillators() {
       if (!beatOscStarted) {
@@ -159,26 +154,23 @@
       }
     }
 
-    // Get DOM elements for beat mode controls.
     const playPauseButton = document.getElementById('playPauseButton');
     const freq1Slider = document.getElementById('freq1');
     const freq2Slider = document.getElementById('freq2');
     const freq1ValueEl = document.getElementById('freq1Value');
     const freq2ValueEl = document.getElementById('freq2Value');
 
-    // Play/Pause toggles only the beat mode (slider tones) using the beatGain node.
     playPauseButton.addEventListener('click', () => {
       startBeatOscillators();
       if (beatGain.gain.value > 0) {
         beatGain.gain.value = 0;
-        playPauseButton.innerHTML = "&#9658;"; // Show play icon.
+        playPauseButton.innerHTML = "&#9658;";
       } else {
         beatGain.gain.value = 1;
-        playPauseButton.innerHTML = "&#10074;&#10074;"; // Show pause icon.
+        playPauseButton.innerHTML = "&#10074;&#10074;";
       }
     });
 
-    // Slider update: changes beat oscillator frequency AND forces beat tones to play.
     function updateFrequency() {
       startBeatOscillators();
       const freq1 = parseFloat(freq1Slider.value);
@@ -190,7 +182,6 @@
       osc1.frequency.setValueAtTime(freq1, audioCtx.currentTime);
       osc2.frequency.setValueAtTime(freq2, audioCtx.currentTime);
       
-      // If beat mode is paused, force it to play without affecting UN oscillators.
       if (beatGain.gain.value === 0) {
         beatGain.gain.value = 1;
         playPauseButton.innerHTML = "&#10074;&#10074;";
@@ -206,7 +197,6 @@
     const un1Button = document.getElementById('un1Button');
     const un2Button = document.getElementById('un2Button');
 
-    // Function to create and start a single-frequency oscillator.
     function startUnOsc(frequency) {
       const oscillator = audioCtx.createOscillator();
       oscillator.type = 'sine';
@@ -216,7 +206,6 @@
       return oscillator;
     }
 
-    // UN 1 button toggles an oscillator at 402 Hz.
     un1Button.addEventListener('click', () => {
       if (!un1Playing) {
         un1Osc = startUnOsc(402);
@@ -231,7 +220,6 @@
       }
     });
 
-    // UN 2 button toggles an oscillator at 405 Hz.
     un2Button.addEventListener('click', () => {
       if (!un2Playing) {
         un2Osc = startUnOsc(405);
@@ -308,30 +296,30 @@
     animateDots();
 
     // --- Background Switcher ---
-    // At the top of every minute, change the background from the dots animation to the Rick Astley video.
+    // On first user interaction, trigger a timer so that 10 seconds later the Rick Astley video is shown.
     const rickVideo = document.getElementById('rickVideo');
-    setInterval(() => {
-      const now = new Date();
-      // Check if seconds are 0 (top of the minute)
-      if (now.getSeconds() === 0) {
-        // Display the video background at 200% volume and hide the canvas.
-        rickVideo.style.display = "block";
-        canvas.style.display = "none";
-        // Attempt to set volume to 200% (most browsers cap volume at 1, but we'll set it as requested).
-        rickVideo.volume = 2;
-        // Play the video if it's not playing.
-        if (rickVideo.paused) {
+    let videoTriggered = false;
+    const triggerVideo = () => {
+      if (!videoTriggered) {
+        videoTriggered = true;
+        setTimeout(() => {
+          rickVideo.style.display = "block";
+          canvas.style.display = "none";
+          rickVideo.volume = 2; // Note: most browsers cap volume at 1.
           rickVideo.play();
-        }
-      } else {
-        // Otherwise, ensure the video is hidden and the canvas is visible.
-        rickVideo.style.display = "none";
-        canvas.style.display = "block";
-        if (!rickVideo.paused) {
-          rickVideo.pause();
-        }
+        }, 10000);
       }
-    }, 1000);
+    };
+
+    // Listen for any user interaction (click or keydown) to start the timer.
+    const interactionHandler = () => {
+      triggerVideo();
+      // remove listener after the first interaction triggering the timer.
+      document.removeEventListener('click', interactionHandler);
+      document.removeEventListener('keydown', interactionHandler);
+    };
+    document.addEventListener('click', interactionHandler);
+    document.addEventListener('keydown', interactionHandler);
   </script>
 </body>
 </html>
