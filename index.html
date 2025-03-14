@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ronan's Beat Frequency Generator</title>
+  <title>Modern Beat Frequency Generator</title>
   <style>
     /* Reset some basic styles */
     * {
@@ -100,7 +100,7 @@
     <button id="playPauseButton" class="btn">&#9658;</button>
     <!-- New play unknown button -->
     <button id="playUnknownButton" class="btn">Play Unknown</button>
-    <!-- New buttons un1 and un2 for single frequency -->
+    <!-- New buttons un1 and un2 for single frequency tones -->
     <button id="un1Button" class="btn">UN 1 (402 Hz)</button>
     <button id="un2Button" class="btn">UN 2 (405 Hz)</button>
     <div class="slider-container">
@@ -117,7 +117,7 @@
   </div>
 
   <script>
-    // Audio context setup and oscillators
+    // Audio context setup and oscillators for beat mode
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let osc1 = audioCtx.createOscillator();
     let osc2 = audioCtx.createOscillator();
@@ -125,28 +125,25 @@
     osc1.type = 'sine';
     osc2.type = 'sine';
 
-    // Set initial frequencies
+    // Set initial frequencies for beat mode
     osc1.frequency.setValueAtTime(440, audioCtx.currentTime);
     osc2.frequency.setValueAtTime(445, audioCtx.currentTime);
 
-    // Connect oscillators to destination
+    // Connect oscillators of beat mode to destination
     osc1.connect(audioCtx.destination);
     osc2.connect(audioCtx.destination);
 
-    // Flag for oscillator start (one-time start)
+    // Flags for beat oscillator start and unknown mode
     let audioStarted = false;
-    // Flag for unknown mode
     let usingUnknown = false;
 
-    // Get DOM elements
+    // Get DOM elements for beat mode controls
     const playPauseButton = document.getElementById('playPauseButton');
     const playUnknownButton = document.getElementById('playUnknownButton');
-    const un1Button = document.getElementById('un1Button');
-    const un2Button = document.getElementById('un2Button');
     const freq1Slider = document.getElementById('freq1');
     const freq2Slider = document.getElementById('freq2');
 
-    // Function to ensure oscillators are started only once
+    // Function to ensure beat oscillators are started only once
     function startOscillatorsIfNeeded() {
       if (!audioStarted) {
         try {
@@ -159,7 +156,7 @@
       }
     }
 
-    // Play/Pause button event (for slider mode)
+    // Play/Pause button event (for beat mode)
     playPauseButton.addEventListener('click', () => {
       if (usingUnknown) return; // Do nothing if unknown mode is active
       startOscillatorsIfNeeded();
@@ -177,7 +174,7 @@
     // Play Unknown button event listener (toggles unknown mode)
     playUnknownButton.addEventListener('click', () => {
       if (!usingUnknown) {
-        // Activate unknown mode without changing the displayed frequency values
+        // Activate unknown mode without changing displayed frequency values for beat mode
         usingUnknown = true;
         playPauseButton.disabled = true;
         freq1Slider.disabled = true;
@@ -189,11 +186,11 @@
         const unknownFreq2 = Math.random() * (480 - 400) + 400;
 
         startOscillatorsIfNeeded();
-        // Set oscillators to unknown frequencies without updating display labels
+        // Set beat oscillators to unknown frequencies (display remains unchanged)
         osc1.frequency.setValueAtTime(unknownFreq1, audioCtx.currentTime);
         osc2.frequency.setValueAtTime(unknownFreq2, audioCtx.currentTime);
       } else {
-        // Deactivate unknown mode and revert to slider mode
+        // Deactivate unknown mode and revert to slider control for beat mode
         usingUnknown = false;
         playPauseButton.disabled = false;
         freq1Slider.disabled = false;
@@ -202,37 +199,9 @@
       }
     });
 
-    // un1Button event: Set both oscillators to 402 Hz (single frequency, so beat is 0)
-    un1Button.addEventListener('click', () => {
-      startOscillatorsIfNeeded();
-      // Set both oscillators to 402 Hz
-      osc1.frequency.setValueAtTime(402, audioCtx.currentTime);
-      osc2.frequency.setValueAtTime(402, audioCtx.currentTime);
-      // Update display values and slider positions
-      document.getElementById('freq1Value').innerText = "402.0";
-      document.getElementById('freq2Value').innerText = "402.0";
-      freq1Slider.value = 402;
-      freq2Slider.value = 402;
-      document.getElementById('beatFrequency').innerText = "0.0";
-    });
-
-    // un2Button event: Set both oscillators to 405 Hz (single frequency, so beat is 0)
-    un2Button.addEventListener('click', () => {
-      startOscillatorsIfNeeded();
-      // Set both oscillators to 405 Hz
-      osc1.frequency.setValueAtTime(405, audioCtx.currentTime);
-      osc2.frequency.setValueAtTime(405, audioCtx.currentTime);
-      // Update display values and slider positions
-      document.getElementById('freq1Value').innerText = "405.0";
-      document.getElementById('freq2Value').innerText = "405.0";
-      freq1Slider.value = 405;
-      freq2Slider.value = 405;
-      document.getElementById('beatFrequency').innerText = "0.0";
-    });
-
-    // Update frequencies via slider (only if not in unknown mode)
+    // Update frequencies via slider (for beat mode, only if not in unknown mode)
     function updateFrequency() {
-      if (usingUnknown) return; // Do not update if unknown mode is active
+      if (usingUnknown) return; // Do not update if unknown mode is active for beat mode
       const freq1 = parseFloat(freq1Slider.value);
       const freq2 = parseFloat(freq2Slider.value);
       
@@ -247,7 +216,58 @@
       document.getElementById('beatFrequency').innerText = beatFreq.toFixed(1);
     }
 
-    // Background animation: neon-light royal blue dots with connecting lines
+    // --- Separate Single-Frequency Oscillators for UN 1 and UN 2 ---
+    let un1Osc = null;
+    let un2Osc = null;
+    let un1Playing = false;
+    let un2Playing = false;
+
+    const un1Button = document.getElementById('un1Button');
+    const un2Button = document.getElementById('un2Button');
+
+    // Function to create and start a single frequency oscillator for UN buttons
+    function startUnOsc(frequency) {
+      const oscillator = audioCtx.createOscillator();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+      oscillator.connect(audioCtx.destination);
+      oscillator.start();
+      return oscillator;
+    }
+
+    // UN 1 button event: Toggle oscillator at 402 Hz
+    un1Button.addEventListener('click', () => {
+      startOscillatorsIfNeeded(); // Ensure audio context is running
+      if (!un1Playing) {
+        un1Osc = startUnOsc(402);
+        un1Playing = true;
+        un1Button.innerText = "Stop UN 1 (402 Hz)";
+      } else {
+        un1Osc.stop();
+        un1Osc.disconnect();
+        un1Osc = null;
+        un1Playing = false;
+        un1Button.innerText = "UN 1 (402 Hz)";
+      }
+    });
+
+    // UN 2 button event: Toggle oscillator at 405 Hz
+    un2Button.addEventListener('click', () => {
+      startOscillatorsIfNeeded(); // Ensure audio context is running
+      if (!un2Playing) {
+        un2Osc = startUnOsc(405);
+        un2Playing = true;
+        un2Button.innerText = "Stop UN 2 (405 Hz)";
+      } else {
+        un2Osc.stop();
+        un2Osc.disconnect();
+        un2Osc = null;
+        un2Playing = false;
+        un2Button.innerText = "UN 2 (405 Hz)";
+      }
+    });
+
+    // --- Background Animation ---
     const canvas = document.getElementById('backgroundCanvas');
     const ctx = canvas.getContext('2d');
     let dots = [];
