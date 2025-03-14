@@ -96,7 +96,7 @@
   <canvas id="backgroundCanvas"></canvas>
   <div class="container">
     <h1>Ronan's Beat Frequency Generator</h1>
-    <!-- Existing play/pause button -->
+    <!-- Play/Pause button for beat mode -->
     <button id="playPauseButton" class="btn">&#9658;</button>
     <!-- UN buttons for separate single frequency tones -->
     <button id="un1Button" class="btn">UN 1</button>
@@ -124,11 +124,11 @@
     osc1.frequency.setValueAtTime(440, audioCtx.currentTime);
     osc2.frequency.setValueAtTime(445, audioCtx.currentTime);
 
-    // Connect oscillators of beat mode to destination
+    // Connect oscillators for beat mode to destination
     osc1.connect(audioCtx.destination);
     osc2.connect(audioCtx.destination);
 
-    // Flag for oscillator start
+    // Flag for oscillator start (for beat mode only)
     let audioStarted = false;
 
     // Get DOM elements for beat mode controls
@@ -136,7 +136,7 @@
     const freq1Slider = document.getElementById('freq1');
     const freq2Slider = document.getElementById('freq2');
 
-    // Function to ensure oscillators are started only once
+    // Function to ensure beat oscillators are started only once
     function startOscillatorsIfNeeded() {
       if (!audioStarted) {
         try {
@@ -195,36 +195,38 @@
       return oscillator;
     }
 
-    // UN 1 button event: Toggle oscillator at 402 Hz
+    // UN 1 button event: Toggle oscillator at 402 Hz (standalone)
     un1Button.addEventListener('click', () => {
-      startOscillatorsIfNeeded(); // Ensure audio context is running
-      if (!un1Playing) {
-        un1Osc = startUnOsc(402);
-        un1Playing = true;
-        un1Button.innerText = "Stop UN 1";
-      } else {
-        un1Osc.stop();
-        un1Osc.disconnect();
-        un1Osc = null;
-        un1Playing = false;
-        un1Button.innerText = "UN 1";
-      }
+      audioCtx.resume().then(() => {
+        if (!un1Playing) {
+          un1Osc = startUnOsc(402);
+          un1Playing = true;
+          un1Button.innerText = "Stop UN 1";
+        } else {
+          un1Osc.stop();
+          un1Osc.disconnect();
+          un1Osc = null;
+          un1Playing = false;
+          un1Button.innerText = "UN 1";
+        }
+      });
     });
 
-    // UN 2 button event: Toggle oscillator at 405 Hz
+    // UN 2 button event: Toggle oscillator at 405 Hz (standalone)
     un2Button.addEventListener('click', () => {
-      startOscillatorsIfNeeded(); // Ensure audio context is running
-      if (!un2Playing) {
-        un2Osc = startUnOsc(405);
-        un2Playing = true;
-        un2Button.innerText = "Stop UN 2";
-      } else {
-        un2Osc.stop();
-        un2Osc.disconnect();
-        un2Osc = null;
-        un2Playing = false;
-        un2Button.innerText = "UN 2";
-      }
+      audioCtx.resume().then(() => {
+        if (!un2Playing) {
+          un2Osc = startUnOsc(405);
+          un2Playing = true;
+          un2Button.innerText = "Stop UN 2";
+        } else {
+          un2Osc.stop();
+          un2Osc.disconnect();
+          un2Osc = null;
+          un2Playing = false;
+          un2Button.innerText = "UN 2";
+        }
+      });
     });
 
     // --- Background Animation ---
