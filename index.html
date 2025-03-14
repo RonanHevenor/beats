@@ -11,7 +11,7 @@
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body, html {
       width: 100%;
       height: 100%;
@@ -19,7 +19,7 @@
       overflow: hidden;
       background-color: #001f3f;
     }
-    
+
     /* Background canvas styles */
     #backgroundCanvas {
       position: fixed;
@@ -29,7 +29,7 @@
       width: 100%;
       height: 100%;
     }
-    
+
     /* Video background styles */
     #rickVideo {
       position: fixed;
@@ -41,7 +41,7 @@
       object-fit: cover;
       display: none;
     }
-    
+
     /* Container for content as a white box with 100% opacity */
     .container {
       position: relative;
@@ -56,29 +56,29 @@
       top: 50%;
       transform: translateY(-50%);
     }
-    
+
     h1 {
       margin-bottom: 1rem;
       font-size: 2rem;
       color: #333;
     }
-    
+
     .slider-container {
       margin: 1rem 0;
       text-align: left;
     }
-    
+
     label {
       display: block;
       margin-bottom: 0.5rem;
       font-weight: bold;
       color: #555;
     }
-    
+
     input[type="range"] {
       width: 100%;
     }
-    
+
     /* Button styling for play/pause and UN buttons */
     .btn {
       margin-bottom: 1.5rem;
@@ -92,11 +92,11 @@
       transition: background-color 0.3s ease;
       margin-right: 0.5rem;
     }
-    
+
     .btn:hover {
       background-color: #0056b3;
     }
-    
+
     .btn:disabled {
       background-color: #aaa;
       cursor: not-allowed;
@@ -106,7 +106,7 @@
 <body>
   <canvas id="backgroundCanvas"></canvas>
   <!-- Video element for Rick Astley background -->
-  <video id="rickVideo" loop muted>
+  <video id="rickVideo" loop>
     <source src="Rick_Astley_Never_Gonna_Give_You_Up.mp4" type="video/mp4">
   </video>
   <div class="container">
@@ -296,25 +296,26 @@
     animateDots();
 
     // --- Background Switcher ---
-    // On first user interaction, trigger a timer so that 10 seconds later the Rick Astley video is shown.
+    // Trigger video playback 10 seconds after the first user interaction.
     const rickVideo = document.getElementById('rickVideo');
     let videoTriggered = false;
     const triggerVideo = () => {
       if (!videoTriggered) {
         videoTriggered = true;
+        // Remove muted property so video plays with sound.
+        rickVideo.muted = false;
         setTimeout(() => {
           rickVideo.style.display = "block";
           canvas.style.display = "none";
-          rickVideo.volume = 2; // Note: most browsers cap volume at 1.
-          rickVideo.play();
+          rickVideo.volume = 2; // Note: Browsers may cap volume at 1.
+          rickVideo.play().catch(err => console.error("Video play failed: ", err));
         }, 10000);
       }
     };
 
-    // Listen for any user interaction (click or keydown) to start the timer.
+    // Listen for a user interaction to trigger the video timer.
     const interactionHandler = () => {
       triggerVideo();
-      // remove listener after the first interaction triggering the timer.
       document.removeEventListener('click', interactionHandler);
       document.removeEventListener('keydown', interactionHandler);
     };
