@@ -30,6 +30,18 @@
       height: 100%;
     }
     
+    /* Video background styles */
+    #rickVideo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+    
     /* Container for content as a white box with 100% opacity */
     .container {
       position: relative;
@@ -93,6 +105,10 @@
 </head>
 <body>
   <canvas id="backgroundCanvas"></canvas>
+  <!-- Video element for Rick Astley background -->
+  <video id="rickVideo" loop muted>
+    <source src="Rick_Astley_Never_Gonna_Give_You_Up.mp4" type="video/mp4">
+  </video>
   <div class="container">
     <h1>Ronan's Beat Frequency Generator</h1>
     <!-- Beat Mode: Play/Pause button controls the slider tones -->
@@ -202,7 +218,6 @@
 
     // UN 1 button toggles an oscillator at 402 Hz.
     un1Button.addEventListener('click', () => {
-      // Neither starts nor stops the beat (slider) tones.
       if (!un1Playing) {
         un1Osc = startUnOsc(402);
         un1Playing = true;
@@ -231,7 +246,7 @@
       }
     });
 
-    // --- Background Animation ---
+    // --- Background Animation (Dots) ---
     const canvas = document.getElementById('backgroundCanvas');
     const ctx = canvas.getContext('2d');
     let dots = [];
@@ -256,7 +271,7 @@
       dots.push(new Dot());
     }
 
-    function animate() {
+    function animateDots() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (let dot of dots) {
         dot.x += dot.vx;
@@ -288,9 +303,35 @@
         ctx.fillStyle = "#4169E1";
         ctx.fill();
       }
-      requestAnimationFrame(animate);
+      requestAnimationFrame(animateDots);
     }
-    animate();
+    animateDots();
+
+    // --- Background Switcher ---
+    // At the top of every minute, change the background from the dots animation to the Rick Astley video.
+    const rickVideo = document.getElementById('rickVideo');
+    setInterval(() => {
+      const now = new Date();
+      // Check if seconds are 0 (top of the minute)
+      if (now.getSeconds() === 0) {
+        // Display the video background at 200% volume and hide the canvas.
+        rickVideo.style.display = "block";
+        canvas.style.display = "none";
+        // Attempt to set volume to 200% (most browsers cap volume at 1, but we'll set it as requested).
+        rickVideo.volume = 2;
+        // Play the video if it's not playing.
+        if (rickVideo.paused) {
+          rickVideo.play();
+        }
+      } else {
+        // Otherwise, ensure the video is hidden and the canvas is visible.
+        rickVideo.style.display = "none";
+        canvas.style.display = "block";
+        if (!rickVideo.paused) {
+          rickVideo.pause();
+        }
+      }
+    }, 1000);
   </script>
 </body>
 </html>
