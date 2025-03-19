@@ -1,344 +1,333 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Modern Beat Frequency Generator</title>
-  <style>
-    /* Reset */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body, html {
-      width: 100%;
-      height: 100%;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-      background-color: #001f3f;
-    }
-    /* Floating blue dots canvas - positioned behind the video */
-    #dotsCanvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 1;
-      width: 100%;
-      height: 100%;
-    }
-    /* Video element: appears on top of dots */
-    /* Remove 'loop' so the video plays only once */
-    #rickVideo {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: none;
-      z-index: 2;
-    }
-    /* Overlay to conceal the video until unveiled */
-    #overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #001f3f;
-      z-index: 10;
-      transition: opacity 1s ease;
-    }
-    /* Container for UI elements */
-    .container {
-      position: relative;
-      z-index: 20;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 2rem;
-      text-align: center;
-      background: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      top: 50%;
-      transform: translateY(-50%);
-    }
-    /* Button styling */
-    .btn {
-      margin: 0.5rem;
-      background-color: #007BFF;
-      color: #fff;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 50px;
-      font-size: 1.2rem;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    .btn:hover {
-      background-color: #0056b3;
-    }
-  </style>
-</head>
-<body>
-  <!-- Floating blue dots canvas -->
-  <canvas id="dotsCanvas"></canvas>
-
-  <!-- Video element for Rick Astley background (without loop) -->
-  <video id="rickVideo" playsinline>
-    <source src="Rick_Astley_Never_Gonna_Give_You_Up.mp4" type="video/mp4">
-  </video>
-
-  <!-- Overlay to conceal the video until unveiled -->
-  <div id="overlay"></div>
-
-  <!-- Main content container -->
-  <div class="container">
-    <h1>Ronan's Beat Frequency Generator</h1>
-    <button id="playPauseButton" class="btn">&#9658;</button>
-    <button id="un1Button" class="btn">UN 1</button>
-    <button id="un2Button" class="btn">UN 2</button>
-    <div class="slider-container">
-      <label for="freq1">Frequency 1: <span id="freq1Value">440.0</span> Hz</label>
-      <input type="range" id="freq1" min="400" max="480" value="440" step="0.1" oninput="updateFrequency()">
-    </div>
-    <div class="slider-container">
-      <label for="freq2">Frequency 2: <span id="freq2Value">445.0</span> Hz</label>
-      <input type="range" id="freq2" min="400" max="480" value="445" step="0.1" oninput="updateFrequency()">
-    </div>
-  </div>
-
-  <script>
-    // ------------------------------ Audio / Beat Setup ------------------------------
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    // Beat Mode Oscillators (Slider Tones)
-    let osc1 = audioCtx.createOscillator();
-    let osc2 = audioCtx.createOscillator();
-    let beatGain = audioCtx.createGain();
-    beatGain.gain.value = 1;
-    
-    osc1.type = 'sine';
-    osc2.type = 'sine';
-    osc1.frequency.setValueAtTime(440, audioCtx.currentTime);
-    osc2.frequency.setValueAtTime(445, audioCtx.currentTime);
-    
-    osc1.connect(beatGain);
-    osc2.connect(beatGain);
-    beatGain.connect(audioCtx.destination);
-    
-    let beatOscStarted = false;
-    function startBeatOscillators() {
-      if (!beatOscStarted) {
-        osc1.start();
-        osc2.start();
-        beatOscStarted = true;
-      }
-    }
-    
-    const playPauseButton = document.getElementById('playPauseButton');
-    const freq1Slider = document.getElementById('freq1');
-    const freq2Slider = document.getElementById('freq2');
-    const freq1ValueEl = document.getElementById('freq1Value');
-    const freq2ValueEl = document.getElementById('freq2Value');
-    
-    playPauseButton.addEventListener('click', () => {
-      startBeatOscillators();
-      if (beatGain.gain.value > 0) {
-        beatGain.gain.value = 0;
-        playPauseButton.innerHTML = "&#9658;";
-      } else {
-        beatGain.gain.value = 1;
-        playPauseButton.innerHTML = "&#10074;&#10074;";
-      }
-    });
-    
-    function updateFrequency() {
-      startBeatOscillators();
-      const freq1 = parseFloat(freq1Slider.value);
-      const freq2 = parseFloat(freq2Slider.value);
-      
-      freq1ValueEl.textContent = freq1.toFixed(1);
-      freq2ValueEl.textContent = freq2.toFixed(1);
-      
-      osc1.frequency.setValueAtTime(freq1, audioCtx.currentTime);
-      osc2.frequency.setValueAtTime(freq2, audioCtx.currentTime);
-      
-      if (beatGain.gain.value === 0) {
-        beatGain.gain.value = 1;
-        playPauseButton.innerHTML = "&#10074;&#10074;";
-      }
-    }
-    
-    // UN Oscillators (Standalone)
-    let un1Osc = null;
-    let un2Osc = null;
-    let un1Playing = false;
-    let un2Playing = false;
-    
-    const un1Button = document.getElementById('un1Button');
-    const un2Button = document.getElementById('un2Button');
-    
-    function startUnOsc(frequency) {
-      const oscillator = audioCtx.createOscillator();
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-      oscillator.connect(audioCtx.destination);
-      oscillator.start();
-      return oscillator;
-    }
-    
-    un1Button.addEventListener('click', () => {
-      if (!un1Playing) {
-        un1Osc = startUnOsc(402);
-        un1Playing = true;
-        un1Button.innerText = "Stop UN 1";
-      } else {
-        un1Osc.stop();
-        un1Osc.disconnect();
-        un1Osc = null;
-        un1Playing = false;
-        un1Button.innerText = "UN 1";
-      }
-    });
-    
-    un2Button.addEventListener('click', () => {
-      if (!un2Playing) {
-        un2Osc = startUnOsc(405);
-        un2Playing = true;
-        un2Button.innerText = "Stop UN 2";
-      } else {
-        un2Osc.stop();
-        un2Osc.disconnect();
-        un2Osc = null;
-        un2Playing = false;
-        un2Button.innerText = "UN 2";
-      }
-    });
-    
-    // ------------------------------ Floating Blue Dots Animation ------------------------------
-    const dotsCanvas = document.getElementById('dotsCanvas');
-    const ctx = dotsCanvas.getContext('2d');
-    let dots = [];
-    const DOT_COUNT = 100;
-    const MAX_DISTANCE = 100;
-    
-    function resizeCanvas() {
-      dotsCanvas.width = window.innerWidth;
-      dotsCanvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    
-    function Dot() {
-      this.x = Math.random() * dotsCanvas.width;
-      this.y = Math.random() * dotsCanvas.height;
-      this.vx = (Math.random() - 0.5) * 0.5;
-      this.vy = (Math.random() - 0.5) * 0.5;
-    }
-    
-    for (let i = 0; i < DOT_COUNT; i++) {
-      dots.push(new Dot());
-    }
-    
-    function animateDots() {
-      ctx.clearRect(0, 0, dotsCanvas.width, dotsCanvas.height);
-      for (let dot of dots) {
-        dot.x += dot.vx;
-        dot.y += dot.vy;
-        if (dot.x < 0) dot.x = dotsCanvas.width;
-        if (dot.x > dotsCanvas.width) dot.x = 0;
-        if (dot.y < 0) dot.y = dotsCanvas.height;
-        if (dot.y > dotsCanvas.height) dot.y = 0;
-      }
-      for (let i = 0; i < DOT_COUNT; i++) {
-        for (let j = i + 1; j < DOT_COUNT; j++) {
-          let dx = dots[i].x - dots[j].x;
-          let dy = dots[i].y - dots[j].y;
-          let distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < MAX_DISTANCE) {
-            let opacity = 1 - distance / MAX_DISTANCE;
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(65, 105, 225, ${opacity})`;
-            ctx.lineWidth = 1;
-            ctx.moveTo(dots[i].x, dots[i].y);
-            ctx.lineTo(dots[j].x, dots[j].y);
-            ctx.stroke();
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance App</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
         }
-      }
-      for (let dot of dots) {
-        ctx.beginPath();
-        ctx.arc(dot.x, dot.y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = "#4169E1";
-        ctx.fill();
-      }
-      requestAnimationFrame(animateDots);
-    }
-    animateDots();
-    
-    // ------------------------------ Video Reveal Logic ------------------------------
-    // When the Rick Astley video plays, pause all tones until it's over.
-    // We'll use a click sequence to prepare video playback on a 5-minute mark, stored in a cookie so it doesn't play again.
-    const overlay = document.getElementById('overlay');
-    const rickVideo = document.getElementById('rickVideo');
-    let clickCounter = 0;
-    let unmuteCompleted = false;
-    let readyToPlay = false;
-    
-    // Listen for button clicks on the document to trigger our sequence.
-    document.addEventListener('click', function handleInteraction() {
-      clickCounter++;
-      if (clickCounter === 1) {
-        // First click: display the video element (but keep it hidden behind the overlay).
-        rickVideo.style.display = "block";
-        console.log("First click: Video element displayed behind overlay.");
-      } else if (clickCounter === 2) {
-        // Second click: unmute the video.
-        rickVideo.muted = false;
-        unmuteCompleted = true;
-        console.log("Second click: Video unmuted.");
-      } else if (clickCounter === 3) {
-        // Third click: mark video ready to play at the next 5-minute mark.
-        readyToPlay = true;
-        console.log("Third click: Video set to play at next 5-minute mark.");
-        document.removeEventListener('click', handleInteraction);
-      }
-    });
-    
-    // On reaching next 5-minute mark, play video only if conditions met and cookie not set.
-    const minuteChecker = setInterval(() => {
-      const now = new Date();
-      // 5-minute mark: minutes divisible by 5 and second === 0.
-      if ((now.getMinutes() % 5 === 0) && (now.getSeconds() === 0) && readyToPlay && unmuteCompleted && (document.cookie.indexOf("rickPlayed=true") === -1)) {
-        // Pause all tones by suspending the audio context.
-        audioCtx.suspend().then(() => {
-          console.log("Audio context suspended: Tones paused.");
-          rickVideo.play().then(() => {
-            console.log("5-minute mark reached: Video is now playing.");
-          }).catch(err => {
-            console.error("Error playing video:", err);
-          });
-          // Unveil the video by fading out the overlay.
-          overlay.style.opacity = 0;
-          setTimeout(() => {
-            overlay.style.display = "none";
-          }, 1000);
+        .tab {
+            cursor: pointer;
+            padding: 10px 20px;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+        .tab.active {
+            border-bottom-color: #6b7280; /* Tailwind gray-500 */
+            font-weight: 600;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .type-box {
+            width: 100px; /* Fixed width for the box */
+            height: 38px; /* Changed height to 38px to match input boxes */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem; /* text-sm */
+        }
+        .expense {
+            background-color: #fee2e2; /* bg-red-100 */
+            color: #ef4444; /* text-red-500 */
+        }
+        .income {
+            background-color: #ecfdf5; /* bg-green-100 */
+            color: #15803d; /* text-green-600 */
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-indigo-100 to-purple-100 flex justify-center items-center min-h-screen p-4">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+
+        <div class="flex justify-around mb-4">
+            <div class="tab active" data-tab="income-expenses">Income & Expenses</div>
+            <div class="tab" data-tab="budget">Budget</div>
+        </div>
+
+        <div id="income-expenses" class="tab-content active">
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Income</h2>
+                <div class="flex items-center space-x-2">
+                    <input type="number" id="income-input" placeholder="Enter income" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2" />
+                    <button id="add-income" class="bg-green-500 hover:bg-green-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-green-400">Add</button>
+                </div>
+            </div>
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Expenses</h2>
+                <div class="flex items-center space-x-2">
+                    <input type="number" id="expense-input" placeholder="Enter expense" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2" />
+                    <button id="add-expense" class="bg-red-500 hover:bg-red-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-red-400">Add</button>
+                </div>
+            </div>
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Balance</h2>
+                <p id="balance" class="text-2xl font-bold text-gray-900">Loading...</p>
+            </div>
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Income History</h2>
+                <ul id="income-list" class="list-none p-0">
+                    </ul>
+            </div>
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Expense History</h2>
+                <ul id="expense-list" class="list-none p-0">
+                    </ul>
+            </div>
+        </div>
+
+        <div id="budget" class="tab-content">
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Set Budget</h2>
+                <input type="number" id="income-budget-input" placeholder="Enter income budget" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 mb-2" />
+                <input type="number" id="expense-budget-input" placeholder="Enter expense budget" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 mb-2" />
+                <button id="set-budget" class="bg-blue-500 hover:bg-blue-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full">Set Budget</button>
+                <p id="total-budget-feedback" class="mt-2 text-sm text-gray-600"></p>
+            </div>
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Add Budget Item</h2>
+                <div class="flex items-center space-x-2 mb-2">
+                    <input type="text" id="budget-item-name-input" placeholder="Item name" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 sm:text-sm border-gray-300 rounded-md p-2" />
+                    <input type="number" id="budget-item-amount-input" placeholder="Amount" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/3 sm:text-sm border-gray-300 rounded-md p-2" />
+                    <div id="budget-item-type-input" class="type-box expense">Expense</div>
+                </div>
+                <button id="add-budget-item" class="bg-purple-500 hover:bg-purple-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-purple-400 w-full">Add Item</button>
+            </div>
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Budget Items</h2>
+                <ul id="budget-items-list" class="list-none p-0">
+                    </ul>
+                <p id="budget-feedback" class="mt-2 text-sm text-gray-600"></p>
+            </div>
+            <div class="mb-4">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">Remaining Budget</h2>
+                <p id="remaining-budget" class="text-2xl font-bold text-gray-900">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let income = 0;
+        let expenses = 0;
+        let incomeBudget = 0;
+        let expenseBudget = 0;
+        let budgetItems = [];
+        const incomeHistory = [];
+        const expenseHistory = [];
+
+        const incomeInput = document.getElementById('income-input');
+        const expenseInput = document.getElementById('expense-input');
+        const addIncomeButton = document.getElementById('add-income');
+        const addExpenseButton = document.getElementById('add-expense');
+        const balanceDisplay = document.getElementById('balance');
+        const incomeList = document.getElementById('income-list');
+        const expenseList = document.getElementById('expense-list');
+
+        const incomeBudgetInput = document.getElementById('income-budget-input');
+        const expenseBudgetInput = document.getElementById('expense-budget-input');
+        const setBudgetButton = document.getElementById('set-budget');
+        const budgetItemNameInput = document.getElementById('budget-item-name-input');
+        const budgetItemAmountInput = document.getElementById('budget-item-amount-input');
+        const budgetItemTypeInput = document.getElementById('budget-item-type-input');
+        const addBudgetItemButton = document.getElementById('add-budget-item');
+        const budgetItemsList = document.getElementById('budget-items-list');
+        const budgetFeedback = document.getElementById('budget-feedback');
+        const remainingBudgetDisplay = document.getElementById('remaining-budget');
+
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        function updateBalance() {
+            const balance = income - expenses;
+            balanceDisplay.textContent = `$${balance.toFixed(2)}`;
+            balanceDisplay.style.color = balance >= 0 ? '#22c55e' : '#ef4444';
+        }
+
+        function addIncome() {
+            const incomeValue = parseFloat(incomeInput.value);
+            if (isNaN(incomeValue) || incomeValue <= 0) {
+                alert('Please enter a valid income amount.');
+                return;
+            }
+            income += incomeValue;
+            incomeHistory.push(incomeValue);
+            incomeInput.value = '';
+            updateBalance();
+            renderIncomeHistory();
+            updateRemainingBudget();
+        }
+
+        function addExpense() {
+            const expenseValue = parseFloat(expenseInput.value);
+            if (isNaN(expenseValue) || expenseValue <= 0) {
+                alert('Please enter a valid expense amount.');
+                return;
+            }
+            expenses += expenseValue;
+            expenseHistory.push(expenseValue);
+            expenseInput.value = '';
+            updateBalance();
+            renderExpenseHistory();
+            updateRemainingBudget();
+        }
+
+        function renderIncomeHistory() {
+            incomeList.innerHTML = '';
+            incomeHistory.forEach(item => {
+                const li = document.createElement('li');
+                li.className = "py-1 border-b border-gray-200 last:border-none";
+                li.textContent = `+$${item.toFixed(2)}`;
+                incomeList.appendChild(li);
+            });
+        }
+
+        function renderExpenseHistory() {
+            expenseList.innerHTML = '';
+            expenseHistory.forEach(item => {
+                const li = document.createElement('li');
+                li.className = "py-1 border-b border-gray-200 last:border-none";
+                li.textContent = `-$${item.toFixed(2)}`;
+                expenseList.appendChild(li);
+            });
+        }
+
+        function setBudget() {
+            const incomeBudgetValue = parseFloat(incomeBudgetInput.value);
+            const expenseBudgetValue = parseFloat(expenseBudgetInput.value);
+            if (isNaN(incomeBudgetValue) || incomeBudgetValue < 0 || isNaN(expenseBudgetValue) || expenseBudgetValue < 0) {
+                alert('Please enter valid budget amounts.');
+                return;
+            }
+            incomeBudget = incomeBudgetValue;
+            expenseBudget = expenseBudgetValue;
+            incomeBudgetInput.value = '';
+            expenseBudgetInput.value = '';
+            updateRemainingBudget();
+            budgetFeedback.textContent = 'Budget set!';
+            budgetFeedback.className = "mt-2 text-sm text-green-500";
+        }
+
+        function addBudgetItem() {
+            const itemName = budgetItemNameInput.value.trim();
+            const itemAmount = parseFloat(budgetItemAmountInput.value);
+            const itemType = budgetItemTypeInput.classList.contains('income') ? 'income' : 'expense';
+
+            if (!itemName || isNaN(itemAmount) || itemAmount <= 0) {
+                alert('Please enter a valid item name and amount.');
+                return;
+            }
+
+            // Check against the appropriate budget
+            if (itemType === "income" && budgetItems.filter(item => item.type === 'income').reduce((sum, item) => sum + item.amount, 0) + itemAmount > incomeBudget) {
+                alert('Income budget item amount exceeds remaining income budget.');
+                return;
+            }
+            if (itemType === "expense" && budgetItems.filter(item => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0) + itemAmount > expenseBudget) {
+                    alert('Expense budget item amount exceeds remaining expense budget.');
+                    return;
+            }
+
+            budgetItems.push({ name: itemName, amount: itemAmount, type: itemType });
+            budgetItemNameInput.value = '';
+            budgetItemAmountInput.value = '';
+            renderBudgetItems();
+            updateRemainingBudget();
+            budgetFeedback.textContent = 'Budget item added!';
+            budgetFeedback.className = "mt-2 text-sm text-green-500";
+        }
+
+        function renderBudgetItems() {
+            budgetItemsList.innerHTML = '';
+            budgetItems.forEach(item => {
+                const li = document.createElement('li');
+                li.className = "py-1 border-b border-gray-200 last:border-none flex justify-between items-center";
+                li.textContent = `${item.name}: $${item.amount.toFixed(2)} (${item.type})`;
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.className = "bg-red-500 hover:bg-red-700 text-white font-semibold rounded-md py-1 px-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-400";
+                deleteButton.addEventListener('click', () => {
+                    budgetItems = budgetItems.filter(i => i !== item);
+                    renderBudgetItems();
+                    updateRemainingBudget();
+                    budgetFeedback.textContent = 'Budget item deleted!';
+                    budgetFeedback.className = "mt-2 text-sm text-red-500";
+                });
+                li.appendChild(deleteButton);
+                budgetItemsList.appendChild(li);
+            });
+        }
+
+        function updateRemainingBudget() {
+            const totalIncomeBudgetUsed = budgetItems.filter(item => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
+            const totalExpenseBudgetUsed = budgetItems.filter(item => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
+
+            const remainingIncomeBudget = incomeBudget - totalIncomeBudgetUsed - income;
+            const remainingExpenseBudget = expenseBudget - totalExpenseBudgetUsed - expenses;
+
+
+            let remaining = remainingIncomeBudget + remainingExpenseBudget;
+            remainingBudgetDisplay.textContent = `$${remaining.toFixed(2)}`;
+            remainingBudgetDisplay.style.color = remaining >= 0 ? '#22c55e' : '#ef4444';
+
+             if (remainingIncomeBudget < 0) {
+                budgetFeedback.textContent = `You are $${Math.abs(remainingIncomeBudget).toFixed(2)} over your income budget.`;
+                budgetFeedback.className = "mt-2 text-sm text-red-500 font-semibold";
+            } else if (remainingExpenseBudget < 0) {
+                 budgetFeedback.textContent = `You are $${Math.abs(remainingExpenseBudget).toFixed(2)} over your expense budget.`;
+                budgetFeedback.className = "mt-2 text-sm text-red-500 font-semibold";
+            }
+            else if (remaining < 0) {
+                budgetFeedback.textContent = `You are $${Math.abs(remaining).toFixed(2)} over your total budget.`;
+                budgetFeedback.className = "mt-2 text-sm text-red-500 font-semibold";
+            }
+            else {
+                 budgetFeedback.textContent = `Remaining Budget.`;
+                 budgetFeedback.className = "mt-2 text-sm text-gray-600";
+            }
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                const targetId = tab.getAttribute('data-tab');
+                document.getElementById(targetId).classList.add('active');
+            });
         });
-        
-        // When the video ends, resume the audio context.
-        rickVideo.addEventListener('ended', () => {
-          audioCtx.resume().then(() => {
-            console.log("Video ended: Audio context resumed, tones back on.");
-          });
+
+        addIncomeButton.addEventListener('click', addIncome);
+        addExpenseButton.addEventListener('click', addExpense);
+        setBudgetButton.addEventListener('click', setBudget);
+        addBudgetItemButton.addEventListener('click', addBudgetItem);
+
+        // Event listener for the type box
+        budgetItemTypeInput.addEventListener('click', () => {
+            if (budgetItemTypeInput.classList.contains('expense')) {
+                budgetItemTypeInput.classList.remove('expense');
+                budgetItemTypeInput.classList.add('income');
+                budgetItemTypeInput.textContent = 'Income';
+            } else {
+                budgetItemTypeInput.classList.remove('income');
+                budgetItemTypeInput.classList.add('expense');
+                budgetItemTypeInput.textContent = 'Expense';
+            }
         });
-        
-        // Store cookie so video doesn't play again.
-        document.cookie = "rickPlayed=true; path=/; max-age=31536000"; // 1 year
-        clearInterval(minuteChecker);
-      }
-    }, 1000);
-  </script>
+
+        updateBalance(); // Initial update
+        updateRemainingBudget();
+        renderBudgetItems();
+    </script>
 </body>
 </html>
