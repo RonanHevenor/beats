@@ -122,6 +122,7 @@
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
+            else return null;
         }
 
         function setCookie(name, value, days = 30) {
@@ -129,6 +130,29 @@
             date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
             const expires = `expires=${date.toUTCString()}`;
             document.cookie = `${name}=${value}; ${expires}; path=/`;
+        }
+
+        // Initialize cookies if they don't exist
+        if (getCookie('income') === null) {
+            setCookie('income', 0);
+        }
+        if (getCookie('expenses') === null) {
+            setCookie('expenses', 0);
+        }
+        if (getCookie('incomeBudget') === null) {
+            setCookie('incomeBudget', 0);
+        }
+        if (getCookie('expenseBudget') === null) {
+            setCookie('expenseBudget', 0);
+        }
+        if (getCookie('budgetItems') === null) {
+            setCookie('budgetItems', JSON.stringify([]));
+        }
+        if (getCookie('incomeHistory') === null) {
+            setCookie('incomeHistory', JSON.stringify([]));
+        }
+        if (getCookie('expenseHistory') === null) {
+            setCookie('expenseHistory', JSON.stringify([]));
         }
 
         let income = parseFloat(getCookie('income')) || 0;
