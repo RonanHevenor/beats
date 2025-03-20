@@ -118,13 +118,26 @@
     </div>
 
     <script>
-        let income = 0;
-        let expenses = 0;
-        let incomeBudget = 0;
-        let expenseBudget = 0;
-        let budgetItems = [];
-        const incomeHistory = [];
-        const expenseHistory = [];
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        function setCookie(name, value, days = 30) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = `expires=${date.toUTCString()}`;
+            document.cookie = `${name}=${value}; ${expires}; path=/`;
+        }
+
+        let income = parseFloat(getCookie('income')) || 0;
+        let expenses = parseFloat(getCookie('expenses')) || 0;
+        let incomeBudget = parseFloat(getCookie('incomeBudget')) || 0;
+        let expenseBudget = parseFloat(getCookie('expenseBudget')) || 0;
+        let budgetItems = JSON.parse(getCookie('budgetItems')) || [];
+        const incomeHistory = JSON.parse(getCookie('incomeHistory')) || [];
+        const expenseHistory = JSON.parse(getCookie('expenseHistory')) || [];
 
         const incomeInput = document.getElementById('income-input');
         const expenseInput = document.getElementById('expense-input');
@@ -152,6 +165,8 @@
             const balance = income - expenses;
             balanceDisplay.textContent = `$${balance.toFixed(2)}`;
             balanceDisplay.style.color = balance >= 0 ? '#22c55e' : '#ef4444';
+            setCookie('income', income);
+            setCookie('expenses', expenses);
         }
 
         function addIncome() {
@@ -166,6 +181,7 @@
             updateBalance();
             renderIncomeHistory();
             updateRemainingBudget();
+            setCookie('incomeHistory', JSON.stringify(incomeHistory));
         }
 
         function addExpense() {
@@ -180,6 +196,7 @@
             updateBalance();
             renderExpenseHistory();
             updateRemainingBudget();
+            setCookie('expenseHistory', JSON.stringify(expenseHistory));
         }
 
         function renderIncomeHistory() {
@@ -216,6 +233,8 @@
             updateRemainingBudget();
             budgetFeedback.textContent = 'Budget set!';
             budgetFeedback.className = "mt-2 text-sm text-green-500";
+            setCookie('incomeBudget', incomeBudget);
+            setCookie('expenseBudget', expenseBudget);
         }
 
         function addBudgetItem() {
@@ -245,6 +264,7 @@
             updateRemainingBudget();
             budgetFeedback.textContent = 'Budget item added!';
             budgetFeedback.className = "mt-2 text-sm text-green-500";
+            setCookie('budgetItems', JSON.stringify(budgetItems));
         }
 
         function renderBudgetItems() {
@@ -262,6 +282,7 @@
                     updateRemainingBudget();
                     budgetFeedback.textContent = 'Budget item deleted!';
                     budgetFeedback.className = "mt-2 text-sm text-red-500";
+                    setCookie('budgetItems', JSON.stringify(budgetItems));
                 });
                 li.appendChild(deleteButton);
                 budgetItemsList.appendChild(li);
