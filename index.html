@@ -1,564 +1,547 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance App</title>
-    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            overflow-x: hidden;
-        }
-        .tab {
-            cursor: pointer;
-            padding: 10px 20px;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-        }
-        .tab.active {
-            border-bottom-color: #6b7280;
-            font-weight: 600;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .type-box {
-            width: 100px;
-            height: 38px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.875rem;
-        }
-        .expense {
-            background-color: #fee2e2;
-            color: #ef4444;
-        }
-        .income {
-            background-color: #ecfdf5;
-            color: #15803d;
-        }
-        #budget-summary {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px;
-            background-color: rgba(255, 255, 255, 0.8);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        #budget-summary h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 10px;
-        }
-        #budget-summary ul {
-            list-style: none;
-            padding: 0;
-            margin-bottom: 15px;
-        }
-        #budget-summary li {
-            padding: 8px 0;
-            border-bottom: 1px dashed #d1d5db;
-            display: flex;
-            justify-content: space-between;
-            color: #4b5563;
-        }
-        #budget-summary li:last-child {
-            border-bottom: none;
-        }
-        #budget-summary p {
-            font-size: 1rem;
-            font-weight: 500;
-            color: #374151;
-        }
-        #remaining-budget {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        /* Full Screen Styles */
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .main-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 20px;
-            width: 100%;
-        }
-        .container {
-            width: 95%;
-            max-width: 1200px;
-            margin-bottom: 20px;
-        }
-
-        /* Chart Styles */
-        .chart-container {
-            width: 100%;
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-        }
-        .chart-box {
-            width: 45%;
-            min-width: 300px;
-            height: 300px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .chart-box h3 {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            color: #374151;
-        }
-        .chart-canvas {
-            width: 100%;
-            height: 100%;
-            min-height: 200px;
-        }
-
-        #budget-summary {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px;
-            background-color: rgba(255, 255, 255, 0.8);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            width: 95%;
-            max-width: 1200px;
-        }
-        #budget-summary h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 10px;
-        }
-        #budget-summary ul {
-            list-style: none;
-            padding: 0;
-            margin-bottom: 15px;
-        }
-        #budget-summary li {
-            padding: 8px 0;
-            border-bottom: 1px dashed #d1d5db;
-            display: flex;
-            justify-content: space-between;
-            color: #4b5563;
-        }
-        #budget-summary li:last-child {
-            border-bottom: none;
-        }
-        #budget-summary p {
-            font-size: 1rem;
-            font-weight: 500;
-            color: #374151;
-        }
-        #remaining-budget {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance App</title>
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header, footer {
+      background-color: white;
+    }
+    header {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 16px 0;
+    }
+    footer {
+      background-color: #374151;
+      color: white;
+      text-align: center;
+      padding: 16px 0;
+      margin-top: auto;
+    }
+    .container {
+      width: 95%;
+      max-width: 1200px;
+      margin: 0 auto 20px;
+    }
+    .tab {
+      cursor: pointer;
+      padding: 10px 20px;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+    .tab.active {
+      border-bottom-color: #6b7280;
+      font-weight: 600;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .type-box {
+      width: 100px;
+      height: 38px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .expense {
+      background-color: #fee2e2;
+      color: #ef4444;
+    }
+    .income {
+      background-color: #ecfdf5;
+      color: #15803d;
+    }
+    #budget-summary {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      background-color: rgba(255,255,255,0.8);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      width: 95%;
+      max-width: 1200px;
+    }
+    #budget-summary h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 10px;
+    }
+    #budget-summary ul {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 15px;
+    }
+    #budget-summary li {
+      padding: 8px 0;
+      border-bottom: 1px dashed #d1d5db;
+      display: flex;
+      justify-content: space-between;
+      color: #4b5563;
+    }
+    #budget-summary li:last-child {
+      border-bottom: none;
+    }
+    #budget-summary p {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #374151;
+    }
+    #remaining-budget {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .chart-container {
+      width: 100%;
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+    }
+    .chart-box {
+      width: 45%;
+      min-width: 300px;
+      height: 300px;
+      background-color: rgba(255,255,255,0.8);
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .chart-box h3 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: #374151;
+    }
+    .chart-canvas {
+      width: 100%;
+      height: 100%;
+      min-height: 200px;
+    }
+  </style>
 </head>
 <body class="bg-white">
-    <header class="bg-white shadow-md py-4">
-        <h1 class="text-2xl font-semibold text-gray-800 text-center">Finance App</h1>
-    </header>
+  <header>
+    <h1 class="text-2xl font-semibold text-gray-800 text-center">Finance App</h1>
+  </header>
 
-    <main class="main-content">
-        <div class="container">
-            <div class="flex justify-around mb-4">
-                <div class="tab active" data-tab="income-expenses">Income & Expenses</div>
-                <div class="tab" data-tab="budget">Budget</div>
-            </div>
+  <main class="main-content">
+    <div class="container">
+      <div class="flex justify-around mb-4">
+        <div class="tab active" data-tab="income-expenses">Income & Expenses</div>
+        <div class="tab" data-tab="budget">Budget</div>
+      </div>
 
-            <div id="income-expenses" class="tab-content active">
-                <div class="mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Income</h2>
-                    <div class="flex items-center space-x-2">
-                        <input type="number" id="income-input" placeholder="Enter income" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2" />
-                        <button id="add-income" class="bg-green-500 hover:bg-green-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-green-400">Add</button>
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Expenses</h2>
-                    <div class="flex items-center space-x-2">
-                        <input type="number" id="expense-input" placeholder="Enter expense" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2" />
-                        <button id="add-expense" class="bg-red-500 hover:bg-red-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-red-400">Add</button>
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Balance</h2>
-                    <p id="balance" class="text-2xl font-bold text-gray-900">Loading...</p>
-                </div>
-                <div class="mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Income History</h2>
-                    <ul id="income-list" class="list-none p-0">
-                        </ul>
-                </div>
-                <div class="mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Expense History</h2>
-                    <ul id="expense-list" class="list-none p-0">
-                        </ul>
-                </div>
-            </div>
-
-            <div id="budget" class="tab-content">
-                <div class="mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Set Budget</h2>
-                    <input type="number" id="income-budget-input" placeholder="Enter income budget" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 mb-2" />
-                    <input type="number" id="expense-budget-input" placeholder="Enter expense budget" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 mb-2" />
-                    <button id="set-budget" class="bg-blue-500 hover:bg-blue-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full">Set Budget</button>
-                    <p id="total-budget-feedback" class="mt-2 text-sm text-gray-600"></p>
-                </div>
-                <div class="mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Add Budget Item</h2>
-                    <div class="flex items-center space-x-2 mb-2">
-                        <input type="text" id="budget-item-name-input" placeholder="Item name" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 sm:text-sm border-gray-300 rounded-md p-2" />
-                        <input type="number" id="budget-item-amount-input" placeholder="Amount" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/3 sm:text-sm border-gray-300 rounded-md p-2" />
-                        <div id="budget-item-type-input" class="type-box expense">Expense</div>
-                    </div>
-                    <button id="add-budget-item" class="bg-purple-500 hover:bg-purple-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-purple-400 w-full">Add Item</button>
-                </div>
-                <div class="mb-4">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Budget Items</h2>
-                    <ul id="budget-items-list" class="list-none p-0">
-                        </ul>
-                </div>
-                <div class="mb-4" id="remaining-budget-section">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-2">Remaining Budget</h2>
-                    <p id="remaining-budget" class="text-2xl font-bold text-gray-900">Loading...</p>
-                </div>
-            </div>
+      <div id="income-expenses" class="tab-content active">
+        <div class="mb-4">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Income</h2>
+          <div class="flex items-center space-x-2">
+            <input type="number" id="income-input" placeholder="Enter income" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded">
+            <button id="add-income" class="bg-green-500 hover:bg-green-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-green-400">Add</button>
+          </div>
         </div>
-
-        <div class="chart-container" id="chart-container">
-            <div class="chart-box" id="income-expense-chart-box">
-                <h3>Income and Expenses Over Time</h3>
-                <canvas id="incomeExpenseChart" class="chart-canvas"></canvas>
-            </div>
-            <div class="chart-box" id="budget-overview-chart-box">
-                <h3>Budget Overview</h3>
-                <canvas id="budgetOverviewChart" class="chart-canvas"></canvas>
-            </div>
+        <div class="mb-4">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Expenses</h2>
+          <div class="flex items-center space-x-2">
+            <input type="number" id="expense-input" placeholder="Enter expense" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded">
+            <button id="add-expense" class="bg-red-500 hover:bg-red-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-red-400">Add</button>
+          </div>
         </div>
-
-        <div id="budget-summary">
-            <h3>Budget Summary</h3>
-            <ul id="budget-summary-list">
-            </ul>
-            <p>Total Income: <span id="total-income">0</span></p>
-            <p>Total Expenses: <span id="total-expenses">0</span></p>
-            <p id="remaining-budget-summary">Remaining Budget: <span id="remaining-budget">Loading...</span></p>
+        <div class="mb-4">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Balance</h2>
+          <p id="balance" class="text-2xl font-bold text-gray-900">$0.00</p>
         </div>
-    </main>
+        <div class="mb-4">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Income History</h2>
+          <ul id="income-list" class="list-none p-0"></ul>
+        </div>
+        <div class="mb-4">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Expense History</h2>
+          <ul id="expense-list" class="list-none p-0"></ul>
+        </div>
+      </div>
 
-    <footer class="bg-gray-800 text-white text-center py-4 mt-8">
-        <p>© 2024 Finance App. All rights reserved.</p>
-    </footer>
+      <div id="budget" class="tab-content">
+        <div class="mb-4">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Set Budget</h2>
+          <input type="number" id="income-budget-input" placeholder="Enter income budget" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded mb-2">
+          <input type="number" id="expense-budget-input" placeholder="Enter expense budget" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded mb-2">
+          <button id="set-budget" class="bg-blue-500 hover:bg-blue-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full">Set Budget</button>
+          <p id="total-budget-feedback" class="mt-2 text-sm text-gray-600"></p>
+        </div>
+        <div class="mb-4">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Add Budget Item</h2>
+          <div class="flex items-center space-x-2 mb-2">
+            <input type="text" id="budget-item-name-input" placeholder="Item name" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/2 sm:text-sm border-gray-300 rounded">
+            <input type="number" id="budget-item-amount-input" placeholder="Amount" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-1/3 sm:text-sm border-gray-300 rounded">
+            <div id="budget-item-type-input" class="type-box expense">Expense</div>
+          </div>
+          <button id="add-budget-item" class="bg-purple-500 hover:bg-purple-700 text-white font-semibold rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-purple-400 w-full">Add Budget Item</button>
+        </div>
+        <div class="mb-4">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Budget Items</h2>
+          <ul id="budget-items-list" class="list-none p-0"></ul>
+        </div>
+        <div class="mb-4" id="remaining-budget-section">
+          <h2 class="text-xl font-semibold text-gray-700 mb-2">Remaining Budget</h2>
+          <p id="remaining-budget" class="text-2xl font-bold text-gray-900">$0.00</p>
+        </div>
+      </div>
+    </div>
 
-    <script>
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            else return null;
-        }
+    <div class="chart-container" id="chart-container">
+      <div class="chart-box" id="income-expense-chart-box" style="display:none;">
+        <h3>Income and Expenses Over Time</h3>
+        <canvas id="incomeExpenseChart" class="chart-canvas"></canvas>
+      </div>
+      <div class="chart-box" id="budget-overview-chart-box" style="display:none;">
+        <h3>Budget Overview</h3>
+        <canvas id="budgetOverviewChart" class="chart-canvas"></canvas>
+      </div>
+    </div>
 
-        function setCookie(name, value, days = 30) {
-            const date = new Date();
-            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-            const expires = `expires=${date.toUTCString()}`;
-            document.cookie = `${name}=${value}; ${expires}; path=/`;
-        }
+    <div id="budget-summary" class="container">
+      <h3>Budget Summary</h3>
+      <ul id="budget-summary-list"></ul>
+      <p>Total Income: <span id="total-income">0</span></p>
+      <p>Total Expenses: <span id="total-expenses">0</span></p>
+      <p>Remaining Budget: <span id="remaining-budget-summary">$0.00</span></p>
+    </div>
+  </main>
 
-        // Initialize cookies if they don't exist
-        if (getCookie('income') === null) {
-            setCookie('income', 0);
-        }
-        if (getCookie('expenses') === null) {
-            setCookie('expenses', 0);
-        }
-        if (getCookie('incomeBudget') === null) {
-            setCookie('incomeBudget', 0);
-        }
-        if (getCookie('expenseBudget') === null) {
-            setCookie('expenseBudget', 0);
-        }
-        if (getCookie('budgetItems') === null) {
-            setCookie('budgetItems', JSON.stringify([]));
-        }
-        if (getCookie('incomeHistory') === null) {
-            setCookie('incomeHistory', JSON.stringify([]));
-        }
-        if (getCookie('expenseHistory') === null) {
-            setCookie('expenseHistory', JSON.stringify([]));
-        }
+  <footer>
+    <p>© 2024 Finance App. All rights reserved.</p>
+  </footer>
 
-        let income = parseFloat(getCookie('income')) || 0;
-        let expenses = parseFloat(getCookie('expenses')) || 0;
-        let incomeBudget = parseFloat(getCookie('incomeBudget')) || 0;
-        let expenseBudget = parseFloat(getCookie('expenseBudget')) || 0;
-        let budgetItems = JSON.parse(getCookie('budgetItems')) || [];
-        const incomeHistory = JSON.parse(getCookie('incomeHistory')) || [];
-        const expenseHistory = JSON.parse(getCookie('expenseHistory')) || [];
+  <script>
+    // Helper for cookies
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    }
 
-        const incomeInput = document.getElementById('income-input');
-        const expenseInput = document.getElementById('expense-input');
-        const addIncomeButton = document.getElementById('add-income');
-        const addExpenseButton = document.getElementById('add-expense');
-        const balanceDisplay = document.getElementById('balance');
-        const incomeList = document.getElementById('income-list');
-        const expenseList = document.getElementById('expense-list');
+    function setCookie(name, value, days = 30) {
+      const date = new Date();
+      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      const expires = `expires=${date.toUTCString()}`;
+      document.cookie = `${name}=${value}; ${expires}; path=/`;
+    }
 
-        const incomeBudgetInput = document.getElementById('income-budget-input');
-        const expenseBudgetInput = document.getElementById('expense-budget-input');
-        const setBudgetButton = document.getElementById('set-budget');
-        const budgetItemNameInput = document.getElementById('budget-item-name-input');
-        const budgetItemAmountInput = document.getElementById('budget-item-amount-input');
-        const budgetItemTypeInput = document.getElementById('budget-item-type-input');
-        const addBudgetItemButton = document.getElementById('add-budget-item');
-        const budgetItemsList = document.getElementById('budget-items-list');
-        const budgetFeedback = document.getElementById('budget-feedback');
-        const remainingBudgetDisplay = document.getElementById('remaining-budget');
-        const tabs = document.querySelectorAll('.tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-        const budgetSummaryList = document.getElementById('budget-summary-list');
-        const totalIncomeDisplay = document.getElementById('total-income');
-        const totalExpensesDisplay = document.getElementById('total-expenses');
-        const chartContainer = document.getElementById('chart-container');
-        const incomeExpenseChartBox = document.getElementById('income-expense-chart-box');
-        const budgetOverviewChartBox = document.getElementById('budget-overview-chart-box');
-        const remainingBudgetSection = document.getElementById('remaining-budget-section');
-        const remainingBudgetSummary = document.getElementById('remaining-budget-summary');
+    // Initialize cookies if they don't exist
+    if (getCookie('income') === null) setCookie('income', 0);
+    if (getCookie('expenses') === null) setCookie('expenses', 0);
+    if (getCookie('incomeBudget') === null) setCookie('incomeBudget', 0);
+    if (getCookie('expenseBudget') === null) setCookie('expenseBudget', 0);
+    if (getCookie('budgetItems') === null) setCookie('budgetItems', JSON.stringify([]));
+    if (getCookie('incomeHistory') === null) setCookie('incomeHistory', JSON.stringify([]));
+    if (getCookie('expenseHistory') === null) setCookie('expenseHistory', JSON.stringify([]));
 
+    let income = parseFloat(getCookie('income')) || 0;
+    let expenses = parseFloat(getCookie('expenses')) || 0;
+    let incomeBudget = parseFloat(getCookie('incomeBudget')) || 0;
+    let expenseBudget = parseFloat(getCookie('expenseBudget')) || 0;
+    let budgetItems = JSON.parse(getCookie('budgetItems')) || [];
+    const incomeHistory = JSON.parse(getCookie('incomeHistory')) || [];
+    const expenseHistory = JSON.parse(getCookie('expenseHistory')) || [];
 
-        // Get chart contexts
-        const incomeExpenseChartCtx = document.getElementById('incomeExpenseChart').getContext('2d');
-        const budgetOverviewChartCtx = document.getElementById('budgetOverviewChart').getContext('2d');
+    // DOM Elements
+    const incomeInput = document.getElementById('income-input');
+    const expenseInput = document.getElementById('expense-input');
+    const addIncomeButton = document.getElementById('add-income');
+    const addExpenseButton = document.getElementById('add-expense');
+    const balanceDisplay = document.getElementById('balance');
+    const incomeList = document.getElementById('income-list');
+    const expenseList = document.getElementById('expense-list');
+    const incomeBudgetInput = document.getElementById('income-budget-input');
+    const expenseBudgetInput = document.getElementById('expense-budget-input');
+    const setBudgetButton = document.getElementById('set-budget');
+    const budgetItemNameInput = document.getElementById('budget-item-name-input');
+    const budgetItemAmountInput = document.getElementById('budget-item-amount-input');
+    const budgetItemTypeInput = document.getElementById('budget-item-type-input');
+    const addBudgetItemButton = document.getElementById('add-budget-item');
+    const budgetItemsList = document.getElementById('budget-items-list');
+    const remainingBudgetDisplay = document.getElementById('remaining-budget');
+    const budgetSummaryList = document.getElementById('budget-summary-list');
+    const totalIncomeDisplay = document.getElementById('total-income');
+    const totalExpensesDisplay = document.getElementById('total-expenses');
+    const remainingBudgetSummary = document.getElementById('remaining-budget-summary');
 
-        let incomeExpenseChart;
-        let budgetOverviewChart;
+    // Chart containers
+    const incomeExpenseChartBox = document.getElementById('income-expense-chart-box');
+    const budgetOverviewChartBox = document.getElementById('budget-overview-chart-box');
+    let incomeExpenseChart, budgetOverviewChart;
 
-        function initCharts() {
-            incomeExpenseChart = new Chart(incomeExpenseChartCtx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [
-                        {
-                            label: 'Income',
-                            data: [],
-                            backgroundColor: 'rgba(52, 211, 153, 0.2)',
-                            borderColor: 'rgba(52, 211, 153, 1)',
-                            borderWidth: 2,
-                            fill: true,
-                            pointRadius: 0
-                        },
-                        {
-                            label: 'Expenses',
-                            data: [],
-                            backgroundColor: 'rgba(248, 113, 113, 0.2)',
-                            borderColor: 'rgba(248, 113, 113, 1)',
-                            borderWidth: 2,
-                            fill: true,
-                            pointRadius: 0
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    scales: {
-                        x: {
-                            display: true,
-                            title: {
-                                display: true,
-                                text: 'Date',
-                                color: '#4b5563'
-                            },
-                            ticks: {
-                                color: '#6b7280'
-                            },
-                            grid: {
-                                color: '#d1d5db'
-                            }
-                        },
-                        y: {
-                            display: true,
-                            title: {
-                                display: true,
-                                text: 'Amount ($)',
-                                color: '#4b5563'
-                            },
-                            ticks: {
-                                color: '#6b7280'
-                            },
-                            grid: {
-                                color: '#d1d5db'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom',
-                            labels: {
-                                color: '#4b5563',
-                                usePointStyle: true
-                            }
-                        }
-                    }
-                }
-            });
-
-            budgetOverviewChart = new Chart(budgetOverviewChartCtx, {
-                type: 'pie',
-                data: {
-                    labels: ['Income', 'Expenses', 'Remaining'],
-                    datasets: [{
-                        label: 'Budget Overview',
-                        data: [0, 0, 0],
-                        backgroundColor: [
-                            'rgba(52, 211, 153, 0.7)',
-                            'rgba(248, 113, 113, 0.7)',
-                            'rgba(192, 192, 192, 0.7)'
-                        ],
-                        borderColor: [
-                            'rgba(52, 211, 153, 1)',
-                            'rgba(248, 113, 113, 1)',
-                            'rgba(192, 192, 192, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom',
-                            labels: {
-                                color: '#4b5563',
-                                usePointStyle: true
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateIncomeExpenseChart() {
-            const today = new Date().toISOString().split('T')[0];
-            const incomeData = incomeHistory;
-            const expenseData = expenseHistory;
-
-            if (!incomeData.length && !expenseData.length) {
-                incomeExpenseChartBox.style.display = 'none';
-                return;
-            } else {
-                incomeExpenseChartBox.style.display = 'flex';
+    function initCharts() {
+      const incomeExpenseCtx = document.getElementById('incomeExpenseChart').getContext('2d');
+      incomeExpenseChart = new Chart(incomeExpenseCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Income',
+              data: [],
+              backgroundColor: 'rgba(52, 211, 153, 0.2)',
+              borderColor: 'rgba(52, 211, 153, 1)',
+              borderWidth: 2,
+              fill: true,
+              pointRadius: 3
+            },
+            {
+              label: 'Expenses',
+              data: [],
+              backgroundColor: 'rgba(248, 113, 113, 0.2)',
+              borderColor: 'rgba(248, 113, 113, 1)',
+              borderWidth: 2,
+              fill: true,
+              pointRadius: 3
             }
-
-            if (incomeExpenseChart.data.labels) {
-                incomeExpenseChart.data.labels.push(today);
-            } else {
-                incomeExpenseChart.data.labels = [today];
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Date',
+                color: '#4b5563'
+              },
+              ticks: { color: '#6b7280' },
+              grid: { color: '#d1d5db' }
+            },
+            y: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Amount ($)',
+                color: '#4b5563'
+              },
+              ticks: { color: '#6b7280' },
+              grid: { color: '#d1d5db' }
             }
-            if (incomeExpenseChart.data.datasets[0].data) {
-                incomeExpenseChart.data.datasets[0].data.push(income);
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: { color: '#4b5563', usePointStyle: true }
             }
-             else{
-                incomeExpenseChart.data.datasets[0].data = [income]
-            }
-
-            if(incomeExpenseChart.data.datasets[1].data){
-                 incomeExpenseChart.data.datasets[1].data.push(expenses);
-            }
-            else{
-                incomeExpenseChart.data.datasets[1].data = [expenses];
-            }
-
-
-            // Limit the number of data points displayed
-            const maxDataPoints = 10;
-            if (incomeExpenseChart.data.labels.length > maxDataPoints) {
-                incomeExpenseChart.data.labels.shift();
-                incomeExpenseChart.data.datasets[0].data.shift();
-                incomeExpenseChart.data.datasets[1].data.shift();
-            }
-
-            incomeExpenseChart.update();
+          }
         }
+      });
 
-        function updateBudgetOverviewChart() {
-            const totalIncome = income + budgetItems.filter(item => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
-            const totalExpenses = expenses + budgetItems.filter(item => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
-            const remainingBudget = totalIncome - totalExpenses;
-
-            if (totalIncome === 0 && totalExpenses === 0) {
-                budgetOverviewChartBox.style.display = 'none';
-                return;
-            } else {
-                budgetOverviewChartBox.style.display = 'flex';
+      const budgetOverviewCtx = document.getElementById('budgetOverviewChart').getContext('2d');
+      budgetOverviewChart = new Chart(budgetOverviewCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Income', 'Expenses', 'Remaining'],
+          datasets: [{
+            label: 'Budget Overview',
+            data: [0, 0, 0],
+            backgroundColor: [
+              'rgba(52, 211, 153, 0.7)',
+              'rgba(248, 113, 113, 0.7)',
+              'rgba(192, 192, 192, 0.7)'
+            ],
+            borderColor: [
+              'rgba(52, 211, 153, 1)',
+              'rgba(248, 113, 113, 1)',
+              'rgba(192, 192, 192, 1)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: { color: '#4b5563', usePointStyle: true }
             }
-
-            budgetOverviewChart.data.datasets[0].data = [totalIncome, totalExpenses, remainingBudget];
-            budgetOverviewChart.update();
+          }
         }
+      });
+    }
 
-        function updateBalance() {
-            const balance = income - expenses;
-            balanceDisplay.textContent = `$${balance.toFixed(2)}`;
-            balanceDisplay.style.color = balance >= 0 ? '#22c55e' : '#ef4444';
-            setCookie('income', income);
-            setCookie('expenses', expenses);
-        }
+    function updateIncomeExpenseChart() {
+      // Only update if there is at least one data point
+      if (incomeHistory.length === 0 && expenseHistory.length === 0) {
+        incomeExpenseChartBox.style.display = 'none';
+        return;
+      }
+      incomeExpenseChartBox.style.display = 'flex';
 
-        function addIncome() {
-            const incomeValue = parseFloat(incomeInput.value);
-            if (isNaN(incomeValue) || incomeValue <= 0) {
-                alert('Please enter a valid income amount.');
-                return;
-            }
-            income += incomeValue;
-            incomeHistory.push(incomeValue);
-            incomeInput.value = '';
-            updateBalance();
-            renderIncomeHistory();
-            updateRemainingBudget();
-            updateIncomeExpenseChart();
-            updateBudgetOverviewChart();
-            setCookie('incomeHistory', JSON.stringify(incomeHistory));
-        }
+      const today = new Date().toISOString().split('T')[0];
+      incomeExpenseChart.data.labels.push(today);
+      incomeExpenseChart.data.datasets[0].data.push(income);
+      incomeExpenseChart.data.datasets[1].data.push(expenses);
 
-        function addExpense() {
-            const expenseValue = parseFloat(expenseInput.value);
-            if (isNaN(expenseValue) || expenseValue <= 0) {
-                alert('Please ente
+      // Limit data points to max 10
+      const maxPoints = 10;
+      if (incomeExpenseChart.data.labels.length > maxPoints) {
+        incomeExpenseChart.data.labels.shift();
+        incomeExpenseChart.data.datasets[0].data.shift();
+        incomeExpenseChart.data.datasets[1].data.shift();
+      }
+      incomeExpenseChart.update();
+    }
+
+    function updateBudgetOverviewChart() {
+      const totalIncome = income + budgetItems.filter(item => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
+      const totalExpenses = expenses + budgetItems.filter(item => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
+      const remainingBudget = totalIncome - totalExpenses;
+
+      // Hide chart if there is no meaningful data
+      if (totalIncome === 0 && totalExpenses === 0) {
+        budgetOverviewChartBox.style.display = 'none';
+        return;
+      }
+      budgetOverviewChartBox.style.display = 'flex';
+
+      budgetOverviewChart.data.datasets[0].data = [totalIncome, totalExpenses, remainingBudget];
+      budgetOverviewChart.update();
+    }
+
+    function updateBalance() {
+      const balance = income - expenses;
+      balanceDisplay.textContent = `$${balance.toFixed(2)}`;
+      balanceDisplay.style.color = balance >= 0 ? '#22c55e' : '#ef4444';
+      setCookie('income', income);
+      setCookie('expenses', expenses);
+    }
+
+    function renderIncomeHistory() {
+      incomeList.innerHTML = '';
+      incomeHistory.forEach((val, idx) => {
+        const li = document.createElement('li');
+        li.textContent = `Income: $${val.toFixed(2)}`;
+        incomeList.appendChild(li);
+      });
+    }
+
+    function renderExpenseHistory() {
+      expenseList.innerHTML = '';
+      expenseHistory.forEach((val, idx) => {
+        const li = document.createElement('li');
+        li.textContent = `Expense: $${val.toFixed(2)}`;
+        expenseList.appendChild(li);
+      });
+    }
+
+    function updateRemainingBudget() {
+      const totalIncome = income;
+      const totalExpenses = expenses;
+      const remaining = totalIncome - totalExpenses;
+      remainingBudgetDisplay.textContent = `$${remaining.toFixed(2)}`;
+      totalIncomeDisplay.textContent = totalIncome;
+      totalExpensesDisplay.textContent = totalExpenses;
+      remainingBudgetSummary.textContent = `$${remaining.toFixed(2)}`;
+    }
+
+    function addIncome() {
+      const incomeValue = parseFloat(incomeInput.value);
+      if (isNaN(incomeValue) || incomeValue <= 0) {
+        alert('Please enter a valid income amount.');
+        return;
+      }
+      income += incomeValue;
+      incomeHistory.push(incomeValue);
+      incomeInput.value = '';
+      updateBalance();
+      renderIncomeHistory();
+      updateRemainingBudget();
+      updateIncomeExpenseChart();
+      updateBudgetOverviewChart();
+      setCookie('incomeHistory', JSON.stringify(incomeHistory));
+    }
+
+    function addExpense() {
+      const expenseValue = parseFloat(expenseInput.value);
+      if (isNaN(expenseValue) || expenseValue <= 0) {
+        alert('Please enter a valid expense amount.');
+        return;
+      }
+      expenses += expenseValue;
+      expenseHistory.push(expenseValue);
+      expenseInput.value = '';
+      updateBalance();
+      renderExpenseHistory();
+      updateRemainingBudget();
+      updateIncomeExpenseChart();
+      updateBudgetOverviewChart();
+      setCookie('expenseHistory', JSON.stringify(expenseHistory));
+    }
+
+    // Toggle budget item type between expense and income when clicked.
+    budgetItemTypeInput.addEventListener('click', () => {
+      if (budgetItemTypeInput.classList.contains('expense')) {
+        budgetItemTypeInput.classList.remove('expense');
+        budgetItemTypeInput.classList.add('income');
+        budgetItemTypeInput.textContent = 'Income';
+      } else {
+        budgetItemTypeInput.classList.remove('income');
+        budgetItemTypeInput.classList.add('expense');
+        budgetItemTypeInput.textContent = 'Expense';
+      }
+    });
+
+    // Event listeners for buttons
+    addIncomeButton.addEventListener('click', addIncome);
+    addExpenseButton.addEventListener('click', addExpense);
+
+    // Tab switching logic
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById(this.getAttribute('data-tab')).classList.add('active');
+      });
+    });
+
+    // Initialize charts once the page loads
+    window.addEventListener('load', () => {
+      initCharts();
+      updateBalance();
+      renderIncomeHistory();
+      renderExpenseHistory();
+      updateRemainingBudget();
+      updateIncomeExpenseChart();
+      updateBudgetOverviewChart();
+    });
+  </script>
+</body>
+</html>
