@@ -47,8 +47,25 @@
             color: #15803d; /* text-green-600 */
         }
     </style>
+<style>
+  body {
+    /* Updated CSS for gradient background */
+    background-image: linear-gradient(to bottom, #6200EA, #304FFE, #0D47A1); /* Gradient of blue shades */
+    animation: gradientShift 10s infinite alternate; /* Added animation */
+    background-size: 200% 200%; /* Ensure background is large enough for animation */
+  }
+
+  @keyframes gradientShift {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 100% 50%;
+    }
+  }
+</style>
 </head>
-<body class="bg-gradient-to-r from-indigo-100 to-purple-100 flex justify-center items-center min-h-screen p-4">
+<body class="flex justify-center items-center min-h-screen p-4">
     <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
 
         <div class="flex justify-around mb-4">
@@ -320,8 +337,8 @@
             const remainingIncomeBudget = incomeBudget - totalIncomeBudgetUsed - income;
             const remainingExpenseBudget = expenseBudget - totalExpenseBudgetUsed - expenses;
 
-
-            let remaining = remainingIncomeBudget + remainingExpenseBudget;
+            // Calculate the total remaining budget
+            let remaining = (incomeBudget + expenseBudget) - (totalIncomeBudgetUsed + totalExpenseBudgetUsed + income + expenses);
             remainingBudgetDisplay.textContent = `$${remaining.toFixed(2)}`;
             remainingBudgetDisplay.style.color = remaining >= 0 ? '#22c55e' : '#ef4444';
 
