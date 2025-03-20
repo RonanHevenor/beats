@@ -1,0 +1,46 @@
+<section id="income-expenses" class="content-section">
+  <div class="mdc-card">
+    <h2 class="section-title">Manage Income &amp; Expenses</h2>
+    <div class="input-group flex-row">
+      <div class="mdc-text-field mdc-text-field--outlined full-width">
+        <input type="number" id="income-input" class="mdc-text-field__input" placeholder="Income Amount">
+        <label class="mdc-floating-label" for="income-input">Income</label>
+        <div class="mdc-line-ripple"></div>
+      </div>
+      <button id="add-income" class="mdc-button mdc-button--raised margin-left-small">
+        <span class="mdc-button__label">Add Income</span>
+      </button>
+    </div>
+    <div class="input-group flex-row">
+      <div class="mdc-text-field mdc-text-field--outlined full-width">
+        <input type="number" id="expense-input" class="mdc-text-field__input" placeholder="Expense Amount">
+        <label class="mdc-floating-label" for="expense-input">Expense</label>
+        <div class="mdc-line-ripple"></div>
+      </div>
+      <button id="add-expense" class="mdc-button mdc-button--raised mdc-button--unelevated margin-left-small">
+        <span class="mdc-button__label">Add Expense</span>
+      </button>
+    </div>
+    <div class="input-group">
+      <h3 class="mdc-typography--headline5">Balance: <span id="balance">$0.00</span></h3>
+    </div>
+    <div class="input-group">
+      <h3 class="mdc-typography--subtitle1">Income History</h3>
+      <ul id="income-list"></ul>
+    </div>
+    <div class="input-group">
+      <h3 class="mdc-typography--subtitle1">Expense History</h3>
+      <ul id="expense-list"></ul>
+    </div>
+    <!-- Integrated Extra: Transaction History Filter -->
+    <div class="mdc-card extra-card">
+      <h2 class="section-title small">Transaction History Filter</h2>
+      <p>Filter transactions by date, type, or category for a refined view.</p>
+    </div>
+    <!-- Integrated Extra: Overspending Alerts -->
+    <div class="mdc-card extra-card">
+      <h2 class="section-title small">Overspending Alerts</h2>
+      <p>Receive alerts when spending nears or exceeds set limits.</p>
+    </div>
+  </div>
+</section>
