@@ -12,14 +12,16 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       :root {
-        /* Spacing ratios based on Material guidelines */
+        /* Material Design based spacing variables */
         --spacing-unit: 16px;
         --small-spacing: calc(var(--spacing-unit) / 2);
         --large-spacing: calc(var(--spacing-unit) * 2);
       }
+      /* Global Styles */
       body {
         font-family: "Roboto", sans-serif;
         margin: 0;
+        padding: 0;
         display: flex;
         flex-direction: column;
         min-height: 100vh;
@@ -36,6 +38,7 @@
       }
       .mdc-tab-bar {
         background-color: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
       main {
         flex-grow: 1;
@@ -49,6 +52,17 @@
         font-size: 1.25rem;
         font-weight: 500;
         color: #333;
+      }
+      .mdc-card {
+        margin: 0 auto var(--large-spacing);
+        max-width: 800px;
+        padding: var(--spacing-unit);
+        background: white;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        border-radius: 4px;
+      }
+      .input-group {
+        margin-bottom: var(--small-spacing);
       }
       .chart-container {
         display: flex;
@@ -77,23 +91,11 @@
       .chart-canvas {
         flex-grow: 1;
       }
-      /* Card styling for new elements */
-      .mdc-card {
-        margin: 0 auto var(--large-spacing);
-        max-width: 800px;
-        padding: var(--spacing-unit);
-        background: white;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        border-radius: 4px;
-      }
       footer {
         background-color: #6200ee;
         color: white;
         text-align: center;
         padding: var(--spacing-unit);
-      }
-      .input-group {
-        margin-bottom: var(--small-spacing);
       }
     </style>
   </head>
@@ -122,16 +124,7 @@
             </button>
             <button class="mdc-tab" data-tab="budget">
               <span class="mdc-tab__content">
-                <span class="mdc-tab__text-label">Budget</span>
-              </span>
-              <span class="mdc-tab-indicator">
-                <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
-              </span>
-              <span class="mdc-tab__ripple"></span>
-            </button>
-            <button class="mdc-tab" data-tab="extras">
-              <span class="mdc-tab__content">
-                <span class="mdc-tab__text-label">Extras</span>
+                <span class="mdc-tab__text-label">Budget &amp; Insights</span>
               </span>
               <span class="mdc-tab-indicator">
                 <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
@@ -146,10 +139,10 @@
     <main>
       <!-- Income & Expenses Section -->
       <section id="income-expenses" class="content-section">
-        <div class="mdc-card" style="padding: 24px;">
+        <div class="mdc-card">
           <h2 class="section-title">Manage Income &amp; Expenses</h2>
-          <div class="input-group">
-            <div class="mdc-text-field mdc-text-field--outlined">
+          <div class="input-group" style="display: flex; align-items: center;">
+            <div class="mdc-text-field mdc-text-field--outlined" style="flex: 1;">
               <input type="number" id="income-input" class="mdc-text-field__input" placeholder="Income Amount" />
               <label class="mdc-floating-label" for="income-input">Income</label>
               <div class="mdc-line-ripple"></div>
@@ -158,8 +151,8 @@
               <span class="mdc-button__label">Add Income</span>
             </button>
           </div>
-          <div class="input-group">
-            <div class="mdc-text-field mdc-text-field--outlined">
+          <div class="input-group" style="display: flex; align-items: center;">
+            <div class="mdc-text-field mdc-text-field--outlined" style="flex: 1;">
               <input type="number" id="expense-input" class="mdc-text-field__input" placeholder="Expense Amount" />
               <label class="mdc-floating-label" for="expense-input">Expense</label>
               <div class="mdc-line-ripple"></div>
@@ -179,28 +172,38 @@
             <h3 class="mdc-typography--subtitle1">Expense History</h3>
             <ul id="expense-list"></ul>
           </div>
+          <!-- Integrated Extra: Transaction History Filter -->
+          <div class="mdc-card" style="margin-top: var(--small-spacing); padding: var(--spacing-unit);">
+            <h2 class="section-title" style="font-size: 1rem;">Transaction History Filter</h2>
+            <p>Filter transactions by date, type, or category for a refined view.</p>
+          </div>
+          <!-- Integrated Extra: Overspending Alerts -->
+          <div class="mdc-card" style="margin-top: var(--small-spacing); padding: var(--spacing-unit);">
+            <h2 class="section-title" style="font-size: 1rem;">Overspending Alerts</h2>
+            <p>Receive real-time alerts when spending nears or exceeds set limits.</p>
+          </div>
         </div>
       </section>
 
-      <!-- Budget Section -->
-      <section id="budget" class="content-section" style="display:none;">
-        <div class="mdc-card" style="padding: 24px;">
+      <!-- Budget & Insights Section -->
+      <section id="budget" class="content-section" style="display: none;">
+        <div class="mdc-card">
           <h2 class="section-title">Set &amp; Monitor Budget</h2>
-          <div class="input-group">
-            <div class="mdc-text-field mdc-text-field--outlined">
+          <div class="input-group" style="margin-bottom: var(--small-spacing);">
+            <div class="mdc-text-field mdc-text-field--outlined" style="width: 100%;">
               <input type="number" id="income-budget-input" class="mdc-text-field__input" placeholder="Income Budget" />
               <label class="mdc-floating-label" for="income-budget-input">Income Budget</label>
               <div class="mdc-line-ripple"></div>
             </div>
           </div>
-          <div class="input-group">
-            <div class="mdc-text-field mdc-text-field--outlined">
+          <div class="input-group" style="margin-bottom: var(--small-spacing);">
+            <div class="mdc-text-field mdc-text-field--outlined" style="width: 100%;">
               <input type="number" id="expense-budget-input" class="mdc-text-field__input" placeholder="Expense Budget" />
               <label class="mdc-floating-label" for="expense-budget-input">Expense Budget</label>
               <div class="mdc-line-ripple"></div>
             </div>
           </div>
-          <button id="set-budget" class="mdc-button mdc-button--raised" style="width:100%; margin-bottom: var(--small-spacing);">
+          <button id="set-budget" class="mdc-button mdc-button--raised" style="width: 100%; margin-bottom: var(--small-spacing);">
             <span class="mdc-button__label">Set Budget</span>
           </button>
           <div class="input-group">
@@ -210,84 +213,63 @@
           <div class="input-group">
             <h3 class="mdc-typography--subtitle1">Remaining Budget: <span id="remaining-budget">$0.00</span></h3>
           </div>
+          <!-- Integrated Extra: Savings Goals -->
+          <div class="mdc-card" style="margin-top: var(--small-spacing); padding: var(--spacing-unit);">
+            <h2 class="section-title" style="font-size: 1rem;">Savings Goals</h2>
+            <p>Set targets for savings and track your progress over time.</p>
+          </div>
+          <!-- Integrated Extra: Upcoming Bills & Reminders -->
+          <div class="mdc-card" style="margin-top: var(--small-spacing); padding: var(--spacing-unit);">
+            <h2 class="section-title" style="font-size: 1rem;">Upcoming Bills &amp; Reminders</h2>
+            <p>List your upcoming bills and set reminders to avoid missed payments.</p>
+          </div>
+          <!-- Integrated Extra: Budget vs Actual Comparison -->
+          <div class="mdc-card" style="margin-top: var(--small-spacing); padding: var(--spacing-unit);">
+            <h2 class="section-title" style="font-size: 1rem;">Budget vs Actual Comparison</h2>
+            <p>Compare your planned budgets with actual income and expenses.</p>
+          </div>
+          <!-- Integrated Extra: Recurring Transactions -->
+          <div class="mdc-card" style="margin-top: var(--small-spacing); padding: var(--spacing-unit);">
+            <h2 class="section-title" style="font-size: 1rem;">Recurring Transactions</h2>
+            <p>Automatically track recurring income or expense items.</p>
+          </div>
         </div>
       </section>
 
-      <!-- Extras Section: Ten additional elements for a good budget tracker -->
-      <section id="extras" class="content-section" style="display:none;">
-        <!-- 1. Expense Categories -->
-        <div class="mdc-card" style="padding: 24px; margin-bottom: var(--spacing-unit);">
-          <h2 class="section-title">Expense Categories</h2>
-          <p>Define and track spending by categories like Food, Utilities, Entertainment, etc.</p>
-          <!-- Category input and list can be added here -->
-        </div>
-        <!-- 2. Savings Goals -->
-        <div class="mdc-card" style="padding: 24px; margin-bottom: var(--spacing-unit);">
-          <h2 class="section-title">Savings Goals</h2>
-          <p>Set targets for savings and monitor progress over time.</p>
-        </div>
-        <!-- 3. Upcoming Bills & Reminders -->
-        <div class="mdc-card" style="padding: 24px; margin-bottom: var(--spacing-unit);">
-          <h2 class="section-title">Upcoming Bills</h2>
-          <p>List and get reminders for upcoming bills and payments.</p>
-        </div>
-        <!-- 4. Transaction History Filter -->
-        <div class="mdc-card" style="padding: 24px; margin-bottom: var(--spacing-unit);">
-          <h2 class="section-title">Transaction History Filter</h2>
-          <p>Filter transactions by date, type, or category.</p>
-        </div>
-        <!-- 5. Budget vs Actual Comparison -->
-        <div class="mdc-card" style="padding: 24px; margin-bottom: var(--spacing-unit);">
-          <h2 class="section-title">Budget vs Actual</h2>
-          <p>Visualize planned versus actual expenses and income.</p>
-        </div>
-        <!-- 6. Spending Insights & Tips -->
-        <div class="mdc-card" style="padding: 24px; margin-bottom: var(--spacing-unit);">
-          <h2 class="section-title">Spending Insights</h2>
-          <p>Get personalized tips and insights based on your spending habits.</p>
-        </div>
-        <!-- 7. Overspending Alerts -->
-        <div class="mdc-card" style="padding: 24px; margin-bottom: var(--spacing-unit);">
-          <h2 class="section-title">Overspending Alerts</h2>
-          <p>Receive alerts when spending exceeds your set limits.</p>
-        </div>
-        <!-- 8. Recurring Transactions -->
-        <div class="mdc-card" style="padding: 24px; margin-bottom: var(--spacing-unit);">
-          <h2 class="section-title">Recurring Transactions</h2>
-          <p>Set up and track recurring income and expenses.</p>
-        </div>
-        <!-- 9. Net Worth Tracker -->
-        <div class="mdc-card" style="padding: 24px; margin-bottom: var(--spacing-unit);">
+      <!-- Integrated Feature: Net Worth Tracker -->
+      <section class="content-section">
+        <div class="mdc-card">
           <h2 class="section-title">Net Worth Tracker</h2>
-          <p>Monitor your assets and liabilities to visualize overall net worth.</p>
-        </div>
-        <!-- 10. Monthly & Yearly Summary -->
-        <div class="mdc-card" style="padding: 24px;">
-          <h2 class="section-title">Monthly & Yearly Summary</h2>
-          <p>Summarize your financial performance monthly and yearly with detailed reports.</p>
+          <p>Monitor your assets and liabilities to view your overall net worth.</p>
         </div>
       </section>
 
       <!-- Chart Section -->
       <section class="chart-container">
-        <div class="chart-box" id="income-expense-chart-box" style="display:none;">
+        <div class="chart-box" id="income-expense-chart-box" style="display: none;">
           <h3>Income &amp; Expenses Over Time</h3>
           <canvas id="incomeExpenseChart" class="chart-canvas"></canvas>
         </div>
-        <div class="chart-box" id="budget-overview-chart-box" style="display:none;">
+        <div class="chart-box" id="budget-overview-chart-box" style="display: none;">
           <h3>Budget Overview</h3>
           <canvas id="budgetOverviewChart" class="chart-canvas"></canvas>
         </div>
       </section>
 
-      <!-- Budget Summary Card -->
+      <!-- Integrated Feature: Monthly & Yearly Summary and Spending Insights -->
       <section class="content-section">
         <div class="mdc-card">
-          <h3 class="mdc-typography--headline6">Budget Summary</h3>
+          <h3 class="mdc-typography--headline6">Budget Summary &amp; Insights</h3>
           <ul id="budget-summary-list"></ul>
           <p class="mdc-typography--body1">Total Income: <span id="total-income">0</span></p>
           <p class="mdc-typography--body1">Total Expenses: <span id="total-expenses">0</span></p>
           <p class="mdc-typography--body1">Remaining Budget: <span id="remaining-budget-summary">$0.00</span></p>
+          <div style="margin-top: var(--small-spacing);">
+            <h2 class="section-title" style="font-size: 1rem;">Monthly &amp; Yearly Summary</h2>
+            <p>Review detailed reports summarizing your financial performance over each month and year.</p>
+            <h2 class="section-title" style="font-size: 1rem;">Spending Insights &amp; Tips</h2>
+            <p>Get personalized insights and suggestions to optimize your spending habits.</p>
+          </div>
         </div>
       </section>
     </main>
@@ -302,11 +284,11 @@
       // Initialize Material Components
       mdc.autoInit();
 
-      // Helper for cookies
+      // Helper functions for Cookies
       function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
-        return parts.length === 2 ? parts.pop().split(';').shift() : null;
+        return parts.length === 2 ? parts.pop().split(";").shift() : null;
       }
       function setCookie(name, value, days = 30) {
         const date = new Date();
@@ -315,7 +297,7 @@
         document.cookie = name + "=" + value + ";" + expires + ";path=/";
       }
 
-      // Initialize cookies if they don't exist
+      // Initialize cookies if not present
       if (getCookie("income") === null) setCookie("income", 0);
       if (getCookie("expenses") === null) setCookie("expenses", 0);
       if (getCookie("incomeBudget") === null) setCookie("incomeBudget", 0);
@@ -350,16 +332,16 @@
       const totalExpensesDisplay = document.getElementById("total-expenses");
       const remainingBudgetSummary = document.getElementById("remaining-budget-summary");
 
-      // Tabs setup
+      // Tabs Setup
       const tabs = document.querySelectorAll(".mdc-tab");
       tabs.forEach((tab) => {
         tab.addEventListener("click", function () {
           tabs.forEach((t) => t.classList.remove("mdc-tab--active"));
           this.classList.add("mdc-tab--active");
-          // Show corresponding section, hide others
-          document.getElementById("income-expenses").style.display = this.getAttribute("data-tab") === "income-expenses" ? "block" : "none";
-          document.getElementById("budget").style.display = this.getAttribute("data-tab") === "budget" ? "block" : "none";
-          document.getElementById("extras").style.display = this.getAttribute("data-tab") === "extras" ? "block" : "none";
+          document.getElementById("income-expenses").style.display =
+            this.getAttribute("data-tab") === "income-expenses" ? "block" : "none";
+          document.getElementById("budget").style.display =
+            this.getAttribute("data-tab") === "budget" ? "block" : "none";
         });
       });
 
@@ -368,7 +350,6 @@
       const budgetOverviewChartBox = document.getElementById("budget-overview-chart-box");
 
       let incomeExpenseChart, budgetOverviewChart;
-      // Sample data for demonstration in absence of historical data
       let sampleDates = [];
       for (let i = 6; i >= 0; i--) {
         let d = new Date();
@@ -393,7 +374,7 @@
                 borderWidth: 2,
                 fill: true,
                 tension: 0.3,
-                pointRadius: 4
+                pointRadius: 4,
               },
               {
                 label: "Expenses",
@@ -403,7 +384,7 @@
                 borderWidth: 2,
                 fill: true,
                 tension: 0.3,
-                pointRadius: 4
+                pointRadius: 4,
               },
             ],
           },
@@ -411,9 +392,9 @@
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-              x: { title: { display: true, text: "Date" }},
-              y: { title: { display: true, text: "Amount ($)" }}
-            }
+              x: { title: { display: true, text: "Date" } },
+              y: { title: { display: true, text: "Amount ($)" } },
+            },
           },
         });
 
@@ -486,7 +467,7 @@
         totalExpensesDisplay.textContent = expenses;
         remainingBudgetSummary.textContent = "$" + remaining.toFixed(2);
       }
-
+      
       function addIncome() {
         const incomeValue = parseFloat(incomeInput.value);
         if (isNaN(incomeValue) || incomeValue <= 0) {
@@ -522,7 +503,7 @@
       addIncomeButton.addEventListener("click", addIncome);
       addExpenseButton.addEventListener("click", addExpense);
       
-      // Initial setup on page load
+      // Initial Setup on Page Load
       window.addEventListener("load", () => {
         updateBalance();
         renderIncomeHistory();
