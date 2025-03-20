@@ -1,0 +1,35 @@
+<section id="budget" class="content-section" style="display:none;">
+  <div class="mdc-card">
+    <h2 class="section-title">Set &amp; Monitor Budget</h2>
+    <div class="input-group">
+      <div class="mdc-text-field mdc-text-field--outlined full-width">
+        <input type="number" id="income-budget-input" class="mdc-text-field__input" placeholder="Income Budget">
+        <label class="mdc-floating-label" for="income-budget-input">Income Budget</label>
+        <div class="mdc-line-ripple"></div>
+      </div>
+    </div>
+    <div class="input-group">
+      <div class="mdc-text-field mdc-text-field--outlined full-width">
+        <input type="number" id="expense-budget-input" class="mdc-text-field__input" placeholder="Expense Budget">
+        <label class="mdc-floating-label" for="expense-budget-input">Expense Budget</label>
+        <div class="mdc-line-ripple"></div>
+      </div>
+    </div>
+    <button id="set-budget" class="mdc-button mdc-button--raised full-width">
+      <span class="mdc-button__label">Set Budget</span>
+    </button>
+    <div class="input-group">
+      <h3 class="mdc-typography--subtitle1">Budget Items</h3>
+      <ul id="budget-items-list"></ul>
+    </div>
+    <div class="input-group">
+      <h3 class="mdc-typography--subtitle1">Remaining Budget: <span id="remaining-budget">$0.00</span></h3>
+    </div>
+    <!-- Integrated Extras -->
+    <div class="mdc-card extra-card">
+      <h2 class="section-title small">Savings Goals</h2>
+      <p>Set targets for savings and track your progress over time.</p>
+    </div>
+    <div class="mdc-card extra-card">
+      <h2 class="section-title small">Upcoming Bills &amp; Reminders</h2>
+      <p>Keep
